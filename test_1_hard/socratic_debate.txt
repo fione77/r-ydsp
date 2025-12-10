@@ -1,0 +1,234 @@
+PROBLEM: Implement a thread-safe LRU cache with TTL expiration
+DEBATE AGENDA:
+**DEBATE AGENDA: Implementing a Thread-Safe LRU Cache with TTL Expiration**
+
+**ALGORITHM OPTIONS:**
+
+* **Option 1:**
+	+ Use a combination of a `HashMap` for key-value pairs and a `LinkedHashMap` to maintain LRU order.
+	+ Utilize a separate thread-safe `LinkedList` to simulate the LRU order when accessing the cache.
+	+ Employ a `ScheduledExecutorService` to periodically remove expired entries based on TTL.
+* **Option 2:**
+	+ Implement a custom `Cache` class using a `ConcurrentHashMap` for key-value pairs and a `ConcurrentLinkedHashMap` for LRU order.
+	+ Use a `Lock` object to synchronize access to the cache and prevent concurrent modifications.
+	+ Utilize a `ScheduledExecutorService` to periodically remove expired entries based on TTL.
+* **Option 3:**
+	+ Leverage a third-party library like Guava or JCache, which provide thread-safe LRU cache implementations with TTL expiration.
+
+**KEY TRADE-OFFS:**
+
+* **Performance vs Readability:** How to balance the need for high-performance cache access with the importance of readable code? Should we prioritize using a third-party library or implementing a custom solution?
+* **Memory Usage vs Cache Size:** How to balance the need to minimize memory usage with the requirement to maintain a large cache size? Should we implement a custom cache or use a library that provides a more efficient memory usage?
+* **Thread-Safety vs Complexity:** How to balance the need for thread-safe cache access with the complexity of implementing a custom solution? Should we use a library or implement a custom solution?
+
+**CRITICAL EDGE CASES:**
+
+
+
+DEBATE TRANSCRIPT:
+**ROUND 1:**
+
+🧠 **ARCHITECT 1: Alex**
+Propose solution: **Option 1:**
+We'll use a combination of a `HashMap` for key-value pairs and a `LinkedHashMap` to maintain LRU order. To simulate the LRU order when accessing the cache, we'll utilize a separate thread-safe `CopyOnWriteArrayList`. This will provide efficient reads and writes, even in a multi-threaded environment. We'll also employ a `ScheduledExecutorService` to periodically remove expired entries based on TTL.
+
+Justification:
+This approach allows for efficient cache access, while maintaining a simple and readable implementation. The `CopyOnWriteArrayList` provides thread-safety and allows for efficient reads, while the `ScheduledExecutorService` ensures timely removal of expired entries.
+
+```java
+public class LRUcache {
+    private final Map<String, Value> cache = new HashMap<>();
+    private final Map<String, Integer> order = new LinkedHashMap<String, Integer>(16, 0.75f, true) {
+        protected boolean removeEldestEntry(Map.Entry eldest) {
+            if (cache.size() > 100) {
+                return true;
+            }
+            return false;
+        }
+    };
+
+    private final CopyOnWriteArrayList<String> accessOrder = new CopyOnWriteArrayList<>();
+
+    public Value get(String key) {
+        if (cache.containsKey(key)) {
+            accessOrder.add(key);
+            order.put(key, order.size());
+            return cache.get(key);
+        }
+        return null;
+    }
+
+    public void put(String key, Value value) {
+        if (cache.containsKey(key)) {
+            cache.put(key, value);
+            order.put(key, order.size());
+            return;
+        }
+        cache.put(key, value);
+        order.put(key, order.size());
+        accessOrder.add(key);
+    }
+
+    private class Value {
+        // Value class implementation
+    }
+}
+```
+
+🔍 **TESTER 1: Ben**
+Attacks:
+- **FAILS when** the cache is under heavy load and multiple threads try to update the cache simultaneously, causing inconsistent access order and potential data loss.
+- **FAILS when** the cache size exceeds the maximum allowed size, causing unexpected behavior and potential OutOfMemoryError.
+- **FAILS when** the TTL expiration is triggered, but the cache is not properly cleaned up, leading to a memory leak.
+
+⚡ **OPTIMIZER 1: Chris**
+Proposes better alternative: **Option 2** with a `ConcurrentHashMap` for key-value pairs and a `ConcurrentLinkedHashMap` for LRU order.
+
+```java
+public class LRUcache {
+    private final ConcurrentHashMap<String, Value> cache = new ConcurrentHashMap<>();
+    private final ConcurrentLinkedHashMap<String, Integer> order = new ConcurrentLinkedHashMap<>(16, 0.75f, true);
+
+    public Value get(String key) {
+        Value value = cache.get(key);
+        if (value != null) {
+            order.put(key, order.size());
+            return value;
+        }
+        return null;
+    }
+
+    public void put(String key, Value value) {
+        cache.put(key, value);
+        order.put(key, order.size());
+    }
+}
+```
+
+Please proceed to ROUND 2.
+
+GENERATED CODE:
+import threading
+import time
+import collections
+import copy_reg
+import types
+import schedule
+import threading
+from typing import Dict, Any, Callable
+
+def _pickle_method(m):
+    """Helper function to pickle method objects."""
+    if m.im_self is None:
+        return getattr, (m.im_class,), m.im_func.__name__
+    else:
+        return getattr, (m.im_self, m.im_class), m.im_func.__name__
+
+copy_reg.pickle(types.MethodType, _pickle_method)
+
+class LRUCache:
+    """
+    A thread-safe LRU cache with TTL expiration.
+
+    Attributes:
+        max_size (int): The maximum size of the cache.
+        ttl (int): The time to live for cache entries in seconds.
+        cache (Dict[str, Tuple[Any, float]]): The cache data structure.
+        access_order (CopyOnWriteArrayList): The access order of the cache.
+        executor (ScheduledExecutorService): The executor for periodic removal of expired entries.
+    """
+
+    def __init__(self, max_size: int, ttl: int):
+        """
+        Initializes the LRU cache.
+
+        Args:
+            max_size (int): The maximum size of the cache.
+            ttl (int): The time to live for cache entries in seconds.
+        """
+        self.max_size = max_size
+        self.ttl = ttl
+        self.cache = collections.OrderedDict()
+        self.access_order = collections.OrderedDict()
+        self.executor = schedule.Scheduler()
+
+        # Create a lock for thread-safe access
+        self.lock = threading.Lock()
+
+        # Schedule periodic removal of expired entries
+        self.executor.every(ttl).seconds.do(self.remove_expired_entries)
+
+    def get(self, key: str) -> Any:
+        """
+        Retrieves a value from the cache.
+
+        Args:
+            key (str): The key to retrieve.
+
+        Returns:
+            Any: The cached value, or None if not found.
+        """
+        with self.lock:
+            # Check if the key exists in the cache
+            if key in self.cache:
+                # Move the accessed key to the end of the access order
+                self.access_order.move_to_end(key)
+
+                # Return the cached value
+                return self.cache[key][0]
+
+            # If the key does not exist, return None
+            return None
+
+    def set(self, key: str, value: Any, expiration_time: float):
+        """
+        Sets a value in the cache with a TTL.
+
+        Args:
+            key (str): The key to set.
+            value (Any): The value to set.
+            expiration_time (float): The expiration time of the cache entry in seconds.
+        """
+        with self.lock:
+            # Check if the key already exists in the cache
+            if key in self.cache:
+                # Remove the existing key from the cache
+                del self.cache[key]
+
+            # Add the new key-value pair to the cache
+            self.cache[key] = (value, expiration_time)
+
+            # Add the key to the access order
+            self.access_order[key] = None
+
+            # If the cache is full, remove the least recently used entry
+            if len(self.cache) > self.max_size:
+                self.remove_expired_entries()
+
+            # Schedule periodic removal of expired entries
+            self.executor.run_pending()
+
+    def remove_expired_entries(self):
+        """
+        Removes expired entries from the cache.
+        """
+        with self.lock:
+            # Get the current time
+            current_time = time.time()
+
+            # Remove expired entries from the cache
+            for key, (value, expiration_time) in list(self.cache.items()):
+                if current_time >= expiration_time:
+                    del self.cache[key]
+                    del self.access_order[key]
+
+    def shutdown(self):
+        """
+        Shuts down the cache and stops the executor.
+        """
+        self.executor.shutdown()
+
+
+# Usage example:
+if __name__ == "__main__":
+    cache

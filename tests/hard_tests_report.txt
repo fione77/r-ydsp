@@ -1,0 +1,23 @@
+SOCRATIC CODER - HARD PROBLEMS TEST
+==================================================
+
+Tests completed: 4
+Total time: 4.38s
+Average quality: 3.0/6.0
+
+Test 1 - Hard
+Problem: Implement a thread-safe LRU cache with TTL expiration
+Time: 1.19s
+----------------------------------------
+Test 2 - Hard
+Problem: Write a function to serialize and deserialize a binary tree
+Time: 1.02s
+----------------------------------------
+Test 3 - Very Hard
+Problem: Implement a concurrent web crawler with rate limiting
+Time: 1.23s
+----------------------------------------
+Test 4 - Medium-Hard
+Problem: Create a Python decorator that memoizes function results
+Time: 0.94s
+----------------------------------------
