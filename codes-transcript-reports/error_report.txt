@@ -1,0 +1,92 @@
+======================================================================
+ERROR ANALYSIS REPORT
+======================================================================
+
+DIRECT GENERATION ERRORS:
+----------------------------------------------------------------------
+✓ No syntax errors
+✓ Code appears complete
+
+Edge Case Results: 3/9 passed
+
+Failed Tests:
+  • Empty input test
+    Error: TypeError: LRUCache.__init__() missing 1 required positional argument: 'ttl'
+
+  • Single element test
+    Error: TypeError: LRUCache.__init__() missing 1 required positional argument: 'ttl'
+
+  • Boundary values test
+    Error: TypeError: LRUCache.__init__() missing 1 required positional argument: 'ttl'
+
+  • Concurrent access test
+    Error: TypeError: LRUCache.__init__() missing 1 required positional argument: 'ttl'
+
+  • Invalid input test
+    Error: TypeError: LRUCache.__init__() missing 1 required positional argument: 'ttl'
+
+  • Overflow conditions test
+    Error: TypeError: LRUCache.__init__() missing 1 required positional argument: 'ttl'
+
+
+======================================================================
+SOCRATIC GENERATION ERRORS:
+----------------------------------------------------------------------
+✓ No syntax errors
+✓ Code appears complete
+
+Edge Case Results: 3/9 passed
+
+Failed Tests:
+  • Empty input test
+    Error: TypeError: LRUCache.__init__() missing 1 required positional argument: 'ttl'
+
+  • Single element test
+    Error: TypeError: LRUCache.__init__() missing 1 required positional argument: 'ttl'
+
+  • Boundary values test
+    Error: TypeError: LRUCache.__init__() missing 1 required positional argument: 'ttl'
+
+  • Concurrent access test
+    Error: TypeError: LRUCache.__init__() missing 1 required positional argument: 'ttl'
+
+  • Invalid input test
+    Error: TypeError: LRUCache.__init__() missing 1 required positional argument: 'ttl'
+
+  • Overflow conditions test
+    Error: TypeError: LRUCache.__init__() missing 1 required positional argument: 'ttl'
+
+
+======================================================================
+WHY ERRORS OCCUR:
+----------------------------------------------------------------------
+
+Common reasons for errors in generated code:
+
+1. INCOMPLETE IMPLEMENTATION
+   - LLM stops generating mid-function
+   - Missing method implementations
+   - Placeholder code like 'pass' or '# TODO'
+   
+2. INCORRECT CLASS/FUNCTION NAMES
+   - Test expects 'LRUCache' but code defines 'Cache'
+   - Mismatch between problem spec and generated code
+   
+3. MISSING EDGE CASE HANDLING
+   - Doesn't check for None/null inputs
+   - No validation for invalid parameters
+   - Doesn't handle empty containers
+   
+4. LOGIC ERRORS
+   - Wrong algorithm implementation
+   - Off-by-one errors
+   - Incorrect condition checks
+   
+5. MISSING IMPORTS
+   - Forgot 'import threading' for locks
+   - Missing 'from typing import ...'
+   
+6. CONTEXT LOSS IN SOCRATIC METHOD
+   - Debate mentions requirements but synthesis forgets them
+   - Important details lost in summarization
+        
