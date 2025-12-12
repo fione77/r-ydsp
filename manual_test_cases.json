@@ -1,0 +1,9 @@
+[
+  {
+    "name": "Get non-existent key",
+    "setup": "cache = LRUCacheWithTTL(capacity=5, ttl_seconds=60)",
+    "test": "result = cache.get('missing')",
+    "result_var": "result",
+    "expected": null
+  }
+]

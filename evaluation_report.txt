@@ -1,0 +1,19 @@
+======================================================================
+EVALUATION REPORT
+======================================================================
+
+DIRECT GENERATION:
+----------------------------------------------------------------------
+Complete: True
+Syntax Errors: False
+Edge Case Score: 0.0%
+Tests Passed: 0
+Tests Failed: 1
+
+SOCRATIC GENERATION:
+----------------------------------------------------------------------
+Complete: True
+Syntax Errors: False
+Edge Case Score: 0.0%
+Tests Passed: 0
+Tests Failed: 1

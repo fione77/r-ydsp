@@ -1,0 +1,118 @@
+======================================================================
+DETAILED EVALUATION REPORT
+======================================================================
+
+PROBLEM:
+----------------------------------------------------------------------
+
+Implement a thread-safe LRU (Least Recently Used) cache with TTL (Time To Live).
+
+Requirements:
+- Support get(key) and put(key, value) operations
+- Maximum capacity that evicts least recently used items when full
+- Each entry has a TTL; expired entries should not be returned
+- Must be thread-safe for concurrent access
+- O(1) time complexity for both operations
+
+
+======================================================================
+TEST CASES USED
+======================================================================
+
+1. Empty input test
+   Setup: obj = LRUCACache(capacity=5)
+   Test: result = obj.get('nonexistent')
+   Expected: None
+
+2. Basic get operation
+   Setup: obj = LRUCACache(capacity=5); obj.put('key1', 'value1')
+   Test: result = obj.get('key1')
+   Expected: value1
+
+3. Evict least recently used item
+   Setup: obj = LRUCACache(capacity=2); obj.put('key1', 'value1'); obj.put('key2', 'value2'); obj.put('key3', 'value3')
+   Test: result = obj.get('key1')
+   Expected: None
+
+4. TTL expiration
+   Setup: import threading; import time; obj = LRUCACache(capacity=2, ttl=1); obj.put('key1', 'value1', ttl=1); time.sleep(1)
+   Test: result = obj.get('key1')
+   Expected: None
+
+5. Thread-safe get operation
+   Setup: import threading; obj = LRUCACache(capacity=5); def thread_get(obj, key): obj.get(key); import random; threading.Thread(target=thread_get, args=(obj, 'key' + str(random.randint(1, 10)))).start()
+   Test: result = obj.get('key1')
+   Expected: value1
+
+6. Thread-safe put operation
+   Setup: import threading; obj = LRUCACache(capacity=5); def thread_put(obj, key, value): obj.put(key, value); import random; threading.Thread(target=thread_put, args=(obj, 'key' + str(random.randint(1, 10)), 'value' + str(random.randint(1, 10)))).start()
+   Test: result = obj.get('key1')
+   Expected: value1
+
+7. Overwrite existing item
+   Setup: obj = LRUCACache(capacity=5); obj.put('key1', 'value1'); obj.put('key1', 'value2')
+   Test: result = obj.get('key1')
+   Expected: value2
+
+8. Cache capacity is not exceeded
+   Setup: obj = LRUCACache(capacity=5); obj.put('key1', 'value1'); obj.put('key2', 'value2'); obj.put('key3', 'value3')
+   Test: result = obj.get('key4')
+   Expected: None
+
+======================================================================
+DIRECT GENERATION RESULTS
+======================================================================
+
+Complete: True
+Syntax Valid: True
+
+Edge Case Score: 0.0%
+Tests Passed: 0/8
+
+FAILED TESTS:
+  ✗ Empty input test
+    Error: NameError: name 'LRUCACache' is not defined
+  ✗ Basic get operation
+    Error: NameError: name 'LRUCACache' is not defined
+  ✗ Evict least recently used item
+    Error: NameError: name 'LRUCACache' is not defined
+  ✗ TTL expiration
+    Error: NameError: name 'LRUCACache' is not defined
+  ✗ Thread-safe get operation
+    Error: SyntaxError: invalid syntax (<string>, line 1)
+  ✗ Thread-safe put operation
+    Error: SyntaxError: invalid syntax (<string>, line 1)
+  ✗ Overwrite existing item
+    Error: NameError: name 'LRUCACache' is not defined
+  ✗ Cache capacity is not exceeded
+    Error: NameError: name 'LRUCACache' is not defined
+
+
+======================================================================
+SOCRATIC GENERATION RESULTS
+======================================================================
+
+Complete: True
+Syntax Valid: True
+
+Edge Case Score: 0.0%
+Tests Passed: 0/8
+
+FAILED TESTS:
+  ✗ Empty input test
+    Error: NameError: name 'LRUCACache' is not defined
+  ✗ Basic get operation
+    Error: NameError: name 'LRUCACache' is not defined
+  ✗ Evict least recently used item
+    Error: NameError: name 'LRUCACache' is not defined
+  ✗ TTL expiration
+    Error: NameError: name 'LRUCACache' is not defined
+  ✗ Thread-safe get operation
+    Error: SyntaxError: invalid syntax (<string>, line 1)
+  ✗ Thread-safe put operation
+    Error: SyntaxError: invalid syntax (<string>, line 1)
+  ✗ Overwrite existing item
+    Error: NameError: name 'LRUCACache' is not defined
+  ✗ Cache capacity is not exceeded
+    Error: NameError: name 'LRUCACache' is not defined
+

@@ -1,0 +1,68 @@
+======================================================================
+ERROR ANALYSIS REPORT
+======================================================================
+
+DIRECT GENERATION ERRORS:
+----------------------------------------------------------------------
+✓ No syntax errors
+✓ Code appears complete
+
+Edge Case Results: 0/2 passed
+
+Failed Tests:
+  • Get non-existent key
+    Error: NameError: name 'LRUCacheWithTTL' is not defined
+
+  • Basic put and get
+    Error: NameError: name 'LRUCacheWithTTL' is not defined
+
+
+======================================================================
+SOCRATIC GENERATION ERRORS:
+----------------------------------------------------------------------
+✓ No syntax errors
+✓ Code appears complete
+
+Edge Case Results: 0/2 passed
+
+Failed Tests:
+  • Get non-existent key
+    Error: NameError: name 'LRUCacheWithTTL' is not defined
+
+  • Basic put and get
+    Error: NameError: name 'LRUCacheWithTTL' is not defined
+
+
+======================================================================
+WHY ERRORS OCCUR:
+----------------------------------------------------------------------
+
+Common reasons for errors in generated code:
+
+1. INCOMPLETE IMPLEMENTATION
+   - LLM stops generating mid-function
+   - Missing method implementations
+   - Placeholder code like 'pass' or '# TODO'
+   
+2. INCORRECT CLASS/FUNCTION NAMES
+   - Test expects 'LRUCache' but code defines 'Cache'
+   - Mismatch between problem spec and generated code
+   
+3. MISSING EDGE CASE HANDLING
+   - Doesn't check for None/null inputs
+   - No validation for invalid parameters
+   - Doesn't handle empty containers
+   
+4. LOGIC ERRORS
+   - Wrong algorithm implementation
+   - Off-by-one errors
+   - Incorrect condition checks
+   
+5. MISSING IMPORTS
+   - Forgot 'import threading' for locks
+   - Missing 'from typing import ...'
+   
+6. CONTEXT LOSS IN SOCRATIC METHOD
+   - Debate mentions requirements but synthesis forgets them
+   - Important details lost in summarization
+        

@@ -1,0 +1,38 @@
+{
+  "problem": "\nImplement a thread-safe LRU (Least Recently Used) cache with TTL (Time To Live).\n\nRequirements:\n- Support get(key) and put(key, value) operations\n- Maximum capacity that evicts least recently used items when full\n- Each entry has a TTL; expired entries should not be returned\n- Must be thread-safe for concurrent access\n- O(1) time complexity for both operations\n",
+  "direct_code": "import threading\nimport time\nfrom collections import OrderedDict\n\nclass LRUCache:\n    def __init__(self, capacity, ttl):\n        self.capacity = capacity\n        self.ttl = ttl\n        self.cache = OrderedDict()\n        self.lock = threading.Lock()\n\n    def get(self, key):\n        with self.lock:\n            if key in self.cache:\n                value, timestamp = self.cache.pop(key)\n                self.cache[key] = (value, time.time())\n                return value\n            else:\n                return None\n\n    def put(self, key, value):\n        with self.lock:\n            if key in self.cache:\n                self.cache.pop(key)\n            elif len(self.cache) >= self.capacity:\n                oldest_key = next(iter(self.cache))\n                self.cache.pop(oldest_key)\n            self.cache[key] = (value, time.time())\n            self._expire()\n\n    def _expire(self):\n        now = time.time()\n        with self.lock:\n            self.cache = {k: v for k, v in self.cache.items() if now - v[1] < self.ttl}",
+  "socratic_code": "import threading\nimport time\nfrom collections import OrderedDict\n\nclass LRUCache:\n    def __init__(self, capacity: int, ttl: int):\n        self.capacity = capacity\n        self.ttl = ttl\n        self.cache = OrderedDict()\n        self.lock = threading.Lock()\n\n    def get(self, key: str) -> any:\n        with self.lock:\n            if key in self.cache:\n                value, timestamp = self.cache.pop(key)\n                if timestamp + self.ttl > time.time():\n                    self.cache[key] = (value, timestamp + self.ttl)\n                    return value\n        return None\n\n    def put(self, key: str, value: any):\n        with self.lock:\n            if key in self.cache:\n                self.cache.pop(key)\n            elif len(self.cache) >= self.capacity:\n                self.cache.popitem(last=False)\n            self.cache[key] = (value, time.time())\n\n    def expire(self, key: str):\n        with self.lock:\n            if key in self.cache:\n                self.cache.pop(key)\n\n    def reset(self):\n        with self.lock:\n            self.cache.clear()",
+  "direct_eval": {
+    "complete": true,
+    "has_syntax_errors": false,
+    "syntax_error": null,
+    "edge_case_score": 0.0,
+    "tests_passed": 0,
+    "tests_failed": 2,
+    "failed_test_names": [
+      "Get non-existent key",
+      "Basic put and get"
+    ]
+  },
+  "socratic_eval": {
+    "complete": true,
+    "has_syntax_errors": false,
+    "syntax_error": null,
+    "edge_case_score": 0.0,
+    "tests_passed": 0,
+    "tests_failed": 2,
+    "failed_test_names": [
+      "Get non-existent key",
+      "Basic put and get"
+    ]
+  },
+  "timing": {
+    "direct": 0.6606945991516113,
+    "plan": 1.2445144653320312,
+    "debate": 2.118467330932617,
+    "synthesis": 0.7167062759399414,
+    "socratic_total": 4.07968807220459,
+    "evaluation": 0.6664233207702637,
+    "total": 9.486494064331055
+  }
+}

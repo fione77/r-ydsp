@@ -1,0 +1,60 @@
+======================================================================
+GENERATED TEST CASES
+======================================================================
+
+TEST 1: Empty input test
+----------------------------------------------------------------------
+Setup: obj = LRUCACache(capacity=5)
+Test Code: result = obj.get('nonexistent')
+Expected Result: None
+Result Variable: result
+
+TEST 2: Basic get operation
+----------------------------------------------------------------------
+Setup: obj = LRUCACache(capacity=5); obj.put('key1', 'value1')
+Test Code: result = obj.get('key1')
+Expected Result: value1
+Result Variable: result
+
+TEST 3: Evict least recently used item
+----------------------------------------------------------------------
+Setup: obj = LRUCACache(capacity=2); obj.put('key1', 'value1'); obj.put('key2', 'value2'); obj.put('key3', 'value3')
+Test Code: result = obj.get('key1')
+Expected Result: None
+Result Variable: result
+
+TEST 4: TTL expiration
+----------------------------------------------------------------------
+Setup: import threading; import time; obj = LRUCACache(capacity=2, ttl=1); obj.put('key1', 'value1', ttl=1); time.sleep(1)
+Test Code: result = obj.get('key1')
+Expected Result: None
+Result Variable: result
+
+TEST 5: Thread-safe get operation
+----------------------------------------------------------------------
+Setup: import threading; obj = LRUCACache(capacity=5); def thread_get(obj, key): obj.get(key); import random; threading.Thread(target=thread_get, args=(obj, 'key' + str(random.randint(1, 10)))).start()
+Test Code: result = obj.get('key1')
+Expected Result: value1
+Result Variable: result
+
+TEST 6: Thread-safe put operation
+----------------------------------------------------------------------
+Setup: import threading; obj = LRUCACache(capacity=5); def thread_put(obj, key, value): obj.put(key, value); import random; threading.Thread(target=thread_put, args=(obj, 'key' + str(random.randint(1, 10)), 'value' + str(random.randint(1, 10)))).start()
+Test Code: result = obj.get('key1')
+Expected Result: value1
+Result Variable: result
+
+TEST 7: Overwrite existing item
+----------------------------------------------------------------------
+Setup: obj = LRUCACache(capacity=5); obj.put('key1', 'value1'); obj.put('key1', 'value2')
+Test Code: result = obj.get('key1')
+Expected Result: value2
+Result Variable: result
+
+TEST 8: Cache capacity is not exceeded
+----------------------------------------------------------------------
+Setup: obj = LRUCACache(capacity=5); obj.put('key1', 'value1'); obj.put('key2', 'value2'); obj.put('key3', 'value3')
+Test Code: result = obj.get('key4')
+Expected Result: None
+Result Variable: result
+

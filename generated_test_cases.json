@@ -1,0 +1,58 @@
+[
+  {
+    "name": "Empty input test",
+    "setup": "obj = LRUCACache(capacity=5)",
+    "test": "result = obj.get('nonexistent')",
+    "result_var": "result",
+    "expected": null
+  },
+  {
+    "name": "Basic get operation",
+    "setup": "obj = LRUCACache(capacity=5); obj.put('key1', 'value1')",
+    "test": "result = obj.get('key1')",
+    "result_var": "result",
+    "expected": "value1"
+  },
+  {
+    "name": "Evict least recently used item",
+    "setup": "obj = LRUCACache(capacity=2); obj.put('key1', 'value1'); obj.put('key2', 'value2'); obj.put('key3', 'value3')",
+    "test": "result = obj.get('key1')",
+    "result_var": "result",
+    "expected": null
+  },
+  {
+    "name": "TTL expiration",
+    "setup": "import threading; import time; obj = LRUCACache(capacity=2, ttl=1); obj.put('key1', 'value1', ttl=1); time.sleep(1)",
+    "test": "result = obj.get('key1')",
+    "result_var": "result",
+    "expected": null
+  },
+  {
+    "name": "Thread-safe get operation",
+    "setup": "import threading; obj = LRUCACache(capacity=5); def thread_get(obj, key): obj.get(key); import random; threading.Thread(target=thread_get, args=(obj, 'key' + str(random.randint(1, 10)))).start()",
+    "test": "result = obj.get('key1')",
+    "result_var": "result",
+    "expected": "value1"
+  },
+  {
+    "name": "Thread-safe put operation",
+    "setup": "import threading; obj = LRUCACache(capacity=5); def thread_put(obj, key, value): obj.put(key, value); import random; threading.Thread(target=thread_put, args=(obj, 'key' + str(random.randint(1, 10)), 'value' + str(random.randint(1, 10)))).start()",
+    "test": "result = obj.get('key1')",
+    "result_var": "result",
+    "expected": "value1"
+  },
+  {
+    "name": "Overwrite existing item",
+    "setup": "obj = LRUCACache(capacity=5); obj.put('key1', 'value1'); obj.put('key1', 'value2')",
+    "test": "result = obj.get('key1')",
+    "result_var": "result",
+    "expected": "value2"
+  },
+  {
+    "name": "Cache capacity is not exceeded",
+    "setup": "obj = LRUCACache(capacity=5); obj.put('key1', 'value1'); obj.put('key2', 'value2'); obj.put('key3', 'value3')",
+    "test": "result = obj.get('key4')",
+    "result_var": "result",
+    "expected": null
+  }
+]

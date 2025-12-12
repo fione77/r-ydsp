@@ -1,0 +1,11 @@
+======================================================================
+GENERATED TEST CASES
+======================================================================
+
+TEST 1: Get non-existent key
+----------------------------------------------------------------------
+Setup: cache = LRUCacheWithTTL(capacity=5, ttl_seconds=60)
+Test Code: result = cache.get('missing')
+Expected Result: None
+Result Variable: result
+
