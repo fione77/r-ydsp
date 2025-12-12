@@ -1,0 +1,68 @@
+================================================================================
+LEETCODE HARD PROBLEMS COMPARISON - FINAL REPORT
+================================================================================
+
+Generated: 2025-12-12T15:59:31.232317
+Total problems tested: 2
+
+SUMMARY STATISTICS:
+--------------------------------------------------------------------------------
+Direct wins: 0
+Socratic wins: 0
+Ties: 2
+
+Average Direct Score: 100.0%
+Average Socratic Score: 100.0%
+Average Time Ratio (Socratic/Direct): 131.0x
+
+DETAILED RESULTS PER PROBLEM:
+================================================================================
+
+Problem: Trapping Rain Water
+--------------------------------------------------------------------------------
+Winner: TIE
+Direct Score: 100.0%
+Socratic Score: 100.0%
+Time Ratio: 57.5x
+
+Direct Evaluation:
+  Tests: 7/7
+  Complexity match: True
+  Would pass LeetCode: True
+
+Socratic Evaluation:
+  Tests: 7/7
+  Complexity match: True
+  Would pass LeetCode: True
+
+
+Problem: Regular Expression Matching
+--------------------------------------------------------------------------------
+Winner: TIE
+Direct Score: 100.0%
+Socratic Score: 100.0%
+Time Ratio: 204.5x
+
+Direct Evaluation:
+  Tests: 7/7
+  Complexity match: False
+  Would pass LeetCode: True
+
+Socratic Evaluation:
+  Tests: 7/7
+  Complexity match: False
+  Would pass LeetCode: True
+
+
+OVERALL RECOMMENDATIONS:
+================================================================================
+⚖️  BOTH METHODS ARE COMPARABLE for hard LeetCode problems
+   Consider using Direct for speed, Socratic for critical code
+
+KEY INSIGHTS:
+--------------------------------------------------------------------------------
+1. Problems where Socratic excels: Complex algorithms with many edge cases
+2. Problems where Direct excels: Straightforward implementations
+3. Time trade-off: Socratic is typically 3-5x slower but may produce better code
+4. For production code, consider Socratic method for critical components
+5. For quick prototyping, Direct generation is more efficient

@@ -1,13 +1,13 @@
 """
-Direct Code Generator
+Direct Code Generator - FOR LEETCODE HARD PROBLEMS - FIXED VERSION
 Generates code without any debate or Socratic method
 """
 import os
 import time
 import requests
-import json
 import re
 import warnings
+import ast
 from typing import Tuple
 from dotenv import load_dotenv
 
@@ -21,46 +21,148 @@ class DirectCodeGenerator:
         print(f"🤖 Direct Generator initialized")
         
     def _clean_generated_code(self, code: str) -> str:
-        """Clean common issues in LLM-generated code"""
+        """Clean LLM-generated code - IMPROVED VERSION"""
         # Remove markdown code blocks
-        code = re.sub(r'^```python\s*\n', '', code, flags=re.MULTILINE)
-        code = re.sub(r'^```\s*$', '', code, flags=re.MULTILINE)
-        code = code.replace("```python", "").replace("```", "")
+        code = re.sub(r'```python\s*', '', code)
+        code = re.sub(r'```\s*', '', code)
         
-        # Remove common preambles
+        # Split into lines
         lines = code.split('\n')
         cleaned_lines = []
         
-        skip_phrases = [
-            "here's", "here is", "i'll", "let me", "this code",
-            "the following", "below is", "this implementation"
+        # Track if we're in actual code
+        in_code_block = False
+        found_first_code_line = False
+        
+        # Phrases that indicate non-code text (to be removed)
+        explanatory_phrases = [
+            "this code", "here's", "here is", "i'll", "let me", 
+            "the following", "below is", "this implementation",
+            "the code above", "in summary", "to summarize",
+            "the solution", "this function", "the algorithm",
+            "in conclusion", "in this code", "as shown above",
+            "explanation:", "note:", "important:", "example:",
+            "the output will be", "we can test", "here is how",
+            "first, we", "then, we", "finally, we", "let's",
+            "we'll", "we will", "we are going to", "approach:",
+            "algorithm:", "implementation:", "solution:",
+            "the function", "returns", "takes", "parameters:",
+            "example usage:", "test case:", "for example,",
+            "note that", "it is important", "make sure",
+            "ensure that", "remember to", "keep in mind"
         ]
         
         for line in lines:
-            line_lower = line.lower().strip()
-            if any(phrase in line_lower for phrase in skip_phrases) and not line.strip().startswith('#'):
+            stripped = line.strip()
+            
+            # Skip empty lines at the beginning
+            if not found_first_code_line and not stripped:
                 continue
-            if not cleaned_lines and not line.strip():
-                continue
-            cleaned_lines.append(line)
+                
+            # Check if line looks like code
+            is_code_like = (
+                stripped.startswith(('#', 'import ', 'from ', 'def ', 'class ', '@')) or
+                stripped.endswith(':') or
+                ' = ' in line or
+                '):' in line or
+                re.match(r'^\s*(if |for |while |def |class |return |yield |raise |try:|except |finally:)', stripped)
+            )
+            
+            # Check if line is explanatory text (not code)
+            is_explanatory = any(phrase in stripped.lower() for phrase in explanatory_phrases)
+            
+            # Once we find real code, start collecting
+            if is_code_like and not is_explanatory:
+                found_first_code_line = True
+                in_code_block = True
+                cleaned_lines.append(line)
+            elif in_code_block:
+                # We're in a code block, keep adding lines
+                cleaned_lines.append(line)
+            elif not found_first_code_line and stripped:
+                # Haven't found code yet, skip explanatory lines
+                if not is_explanatory and len(stripped) < 100:
+                    cleaned_lines.append(line)
         
         code = '\n'.join(cleaned_lines).strip()
         
-        # Remove trailing explanations
-        last_def_index = -1
+        # Remove trailing non-code text after the last function/class
         lines = code.split('\n')
+        last_code_line_index = -1
+        
         for i, line in enumerate(lines):
-            if line.strip().startswith('def ') or line.strip().startswith('class '):
-                last_def_index = i
+            stripped = line.strip()
+            if stripped.startswith(('def ', 'class ', '@')):
+                last_code_line_index = i
         
-        if last_def_index > 0:
-            for i in range(last_def_index + 1, len(lines)):
-                if lines[i] and not lines[i][0].isspace() and not lines[i].startswith('#'):
-                    if not lines[i].strip().startswith('def ') and not lines[i].strip().startswith('class '):
-                        code = '\n'.join(lines[:i]).strip()
-                        break
+        if last_code_line_index >= 0:
+            # Find where actual code ends
+            for i in range(last_code_line_index + 1, len(lines)):
+                stripped = lines[i].strip()
+                # Check if this looks like non-code after the main code
+                if (stripped and 
+                    not stripped.startswith('#') and 
+                    not stripped.startswith('@') and
+                    len(stripped) > 80 and
+                    ' = ' not in stripped and
+                    '):' not in stripped):
+                    # Likely explanatory text, cut off here
+                    code = '\n'.join(lines[:i])
+                    break
         
-        return code
+        # Final cleanup: remove any lines that are pure English sentences
+        final_lines = []
+        for line in code.split('\n'):
+            stripped = line.strip()
+            if not stripped:
+                final_lines.append(line)
+                continue
+                
+            # Skip lines that look like paragraphs of text
+            words = stripped.split()
+            if (len(words) > 6 and 
+                not stripped.startswith('#') and
+                not '=' in stripped and
+                not ':' in stripped and
+                not stripped.endswith(':')):
+                # Looks like a sentence, not code
+                # But allow short comments
+                if not stripped.startswith('#') or len(stripped) > 50:
+                    continue
+                    
+            final_lines.append(line)
+        
+        result = '\n'.join(final_lines).strip()
+        
+        # If result is empty or too short, return original cleaned version
+        if len(result) < 50:
+            return code
+        
+        return result
+    
+    def _validate_code_syntax(self, code: str) -> bool:
+        """Quick syntax validation"""
+        try:
+            ast.parse(code)
+            return True
+        except SyntaxError:
+            return False
+    
+    def _retry_with_stricter_prompt(self, problem: str, attempt: int) -> str:
+        """Retry code generation with stricter prompt"""
+        stricter_prompt = f"""Write Python code to solve this LeetCode problem:
+
+{problem}
+
+IMPORTANT: Provide ONLY the Python code. NO explanations, NO comments outside code blocks, 
+NO text before or after the code. The code must be syntactically correct and complete.
+
+Start with imports or function/class definition. End with the last line of code.
+DO NOT add any explanatory text.
+
+Code:"""
+        
+        return self._make_api_call(stricter_prompt, max_tokens=2500, temperature=0.2)
     
     def _make_api_call(self, prompt: str, max_tokens: int, temperature: float = 0.7) -> str:
         """Make API call with retry logic"""
@@ -94,20 +196,7 @@ class DirectCodeGenerator:
                 
                 if response.status_code == 429:
                     if attempt < max_retries - 1:
-                        try:
-                            error_data = response.json()
-                            if 'message' in error_data:
-                                match = re.search(r'try again in (\d+)ms', error_data['message'])
-                                if match:
-                                    wait_ms = int(match.group(1))
-                                    wait_time = (wait_ms / 1000.0) + 1.0
-                                else:
-                                    wait_time = base_delay * (2 ** attempt)
-                            else:
-                                wait_time = base_delay * (2 ** attempt)
-                        except:
-                            wait_time = base_delay * (2 ** attempt)
-                        
+                        wait_time = base_delay * (2 ** attempt)
                         print(f"  ⏳ Rate limit hit (attempt {attempt+1}/{max_retries}), waiting {wait_time:.1f}s...")
                         time.sleep(wait_time)
                         continue
@@ -116,22 +205,8 @@ class DirectCodeGenerator:
                         return "Error: Rate limit exceeded after retries"
                 
                 if response.status_code != 200:
-                    error_msg = f"API Error {response.status_code}"
-                    try:
-                        error_data = response.json()
-                        if "error" in error_data:
-                            error_msg += f": {error_data['error']}"
-                    except:
-                        pass
-                    print(f"  ⚠️  {error_msg}")
-                    
-                    if response.status_code >= 500 and attempt < max_retries - 1:
-                        wait_time = base_delay * (attempt + 1)
-                        print(f"  ⏳ Server error, retrying in {wait_time:.1f}s...")
-                        time.sleep(wait_time)
-                        continue
-                    
-                    return f"Error: {error_msg}"
+                    print(f"  ⚠️  API Error {response.status_code}")
+                    return f"Error: API Error {response.status_code}"
                 
                 response_data = response.json()
                 if "choices" not in response_data:
@@ -139,13 +214,6 @@ class DirectCodeGenerator:
                 
                 return response_data["choices"][0]["message"]["content"].strip()
                 
-            except requests.exceptions.Timeout:
-                if attempt < max_retries - 1:
-                    wait_time = base_delay * (attempt + 1)
-                    print(f"  ⏳ Timeout, retrying in {wait_time:.1f}s...")
-                    time.sleep(wait_time)
-                    continue
-                return "Error: API timeout"
             except Exception as e:
                 if attempt < max_retries - 1:
                     wait_time = base_delay * (attempt + 1)
@@ -156,67 +224,95 @@ class DirectCodeGenerator:
         
         return "Error: Max retries exceeded"
     
-    def generate(self, problem: str) -> Tuple[str, float]:
-        """Direct code generation"""
-        print("\n🎯 Generating direct solution...")
+    def generate_for_problem(self, problem_data: dict) -> Tuple[str, float]:
+        """Direct code generation for a specific LeetCode problem"""
+        problem_id = problem_data.get("id", "Unknown")
+        title = problem_data.get("title", "")
+        description = problem_data.get("description", "")
+        function_sig = problem_data.get("function_signature", "")
+        
+        print(f"\n🎯 Generating direct solution for Problem {problem_id}: {title}")
         start = time.time()
         
-        prompt = f"""You are an expert Python programmer. Write COMPLETE, EXECUTABLE Python code for this problem.
+        # Build problem description
+        full_problem = f"{title}\n\n{description}"
+        
+        # Use function signature if available
+        if function_sig:
+            full_problem += f"\n\nFunction signature: {function_sig}"
+        
+        # First attempt with strict prompt
+        prompt = f"""You are an expert Python programmer. Write COMPLETE, EXECUTABLE Python code for this LeetCode problem.
 
 PROBLEM:
-{problem}
+{full_problem}
 
 CRITICAL REQUIREMENTS:
-1. Write ONLY valid Python code - NO markdown, NO explanations, NO comments outside code
+1. Write ONLY valid Python code - NO explanations, NO text before or after
 2. Include ALL necessary imports at the top
-3. Every function MUST have a complete implementation - NO 'pass', NO '# TODO', NO placeholders
-4. All classes must have __init__ and all required methods fully implemented
-5. Code must be syntactically correct and immediately executable
-6. Handle all edge cases with actual code, not comments
-7. DO NOT include usage examples or test code - ONLY the class/function definitions
+3. Every function MUST have a complete implementation
+4. Code must be syntactically correct and immediately executable
+5. Handle all edge cases mentioned in the problem
 
 Begin your response with the first import or class definition. End with the last line of code.
-NO text before or after the code.
+DO NOT include any explanatory text.
 
 CODE:"""
         
-        code = self._make_api_call(prompt, max_tokens=2000, temperature=0.3)
+        code = self._make_api_call(prompt, max_tokens=2500, temperature=0.3)
         code = self._clean_generated_code(code)
+        
+        # Validate and retry if needed
+        max_retries = 2
+        for attempt in range(max_retries):
+            if self._validate_code_syntax(code):
+                break
+            print(f"  ⚠️  Syntax error detected, retry {attempt + 1}/{max_retries}...")
+            code = self._retry_with_stricter_prompt(full_problem, attempt)
+            code = self._clean_generated_code(code)
         
         elapsed = time.time() - start
         print(f"  ✓ Direct generation completed ({elapsed:.1f}s)")
+        print(f"  📝 Code length: {len(code)} characters")
+        print(f"  ✅ Syntax valid: {self._validate_code_syntax(code)}")
         
         return code, elapsed
     
-    def save_result(self, code: str, filename: str = "direct_code.py"):
+    def save_result(self, code: str, problem_id: int, filename: str = None):
         """Save generated code to file"""
+        if not filename:
+            filename = f"direct_{problem_id}.py"
+        
+        # Validate syntax before saving
+        if not self._validate_code_syntax(code):
+            print(f"  ⚠️  WARNING: Code has syntax errors, but saving anyway")
+        
         with open(filename, "w", encoding='utf-8') as f:
-            f.write("# DIRECT GENERATION CODE\n")
-            f.write("# Generated without debate\n\n")
+            f.write(f"# DIRECT GENERATION - Problem {problem_id}\n")
+            f.write("# Generated without debate\n")
+            f.write(f"# Syntax valid: {self._validate_code_syntax(code)}\n\n")
             f.write(code)
         print(f"  ✓ Saved to {filename}")
 
 
 if __name__ == "__main__":
+    # Test with a single problem
     generator = DirectCodeGenerator()
     
-    problem = """
-Implement a thread-safe LRU (Least Recently Used) cache with TTL (Time To Live).
-
-Requirements:
-- Support get(key) and put(key, value) operations
-- Maximum capacity that evicts least recently used items when full
-- Each entry has a TTL; expired entries should not be returned
-- Must be thread-safe for concurrent access
-- O(1) time complexity for both operations
-"""
+    # Example problem (you'll load from leetcode.py)
+    test_problem = {
+        "id": 42,
+        "title": "Trapping Rain Water",
+        "description": "Given n non-negative integers representing an elevation map...",
+        "function_signature": "def trap(height: List[int]) -> int:"
+    }
     
-    code, timing = generator.generate(problem)
+    code, timing = generator.generate_for_problem(test_problem)
     
     print("\n" + "="*70)
-    print("GENERATED CODE:")
+    print("GENERATED CODE (First 500 chars):")
     print("="*70)
     print(code[:500] + "..." if len(code) > 500 else code)
     print(f"\nTime taken: {timing:.2f}s")
     
-    generator.save_result(code)
+    generator.save_result(code, test_problem["id"])
