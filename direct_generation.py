@@ -1,5 +1,5 @@
 """
-Direct Code Generator - FOR LEETCODE HARD PROBLEMS - FIXED VERSION
+Direct Code Generator - FOR LEETCODE HARD PROBLEMS - OPENROUTER VERSION
 Generates code without any debate or Socratic method
 """
 import os
@@ -16,10 +16,17 @@ load_dotenv()
 
 class DirectCodeGenerator:
     def __init__(self):
-        self.api_key = os.getenv("GROQ_API_KEY")
-        self.api_url = "https://api.groq.com/openai/v1/chat/completions"
-        print(f"🤖 Direct Generator initialized")
+        # CHANGE 1: Switch from GROQ_API_KEY to OPENROUTER_API_KEY
+        self.api_key = os.getenv("OPENROUTER_API_KEY")
+        # CHANGE 2: Switch to OpenRouter API endpoint
+        self.api_url = "https://openrouter.ai/api/v1/chat/completions"
+        print(f"🤖 Direct Generator initialized (OpenRouter)")
         
+        # Test API connection
+        if not self.api_key:
+            print("  ⚠️  WARNING: OPENROUTER_API_KEY not found in .env file")
+            print("  💡 Add to .env: OPENROUTER_API_KEY=your-key-here")
+    
     def _clean_generated_code(self, code: str) -> str:
         """Clean LLM-generated code - IMPROVED VERSION"""
         # Remove markdown code blocks
@@ -166,19 +173,26 @@ Code:"""
     
     def _make_api_call(self, prompt: str, max_tokens: int, temperature: float = 0.7) -> str:
         """Make API call with retry logic"""
+        # CHANGE 3: Check for OpenRouter API key
         if not self.api_key:
-            return "Error: GROQ_API_KEY not found"
+            print("    ❌ ERROR: OPENROUTER_API_KEY not found")
+            return "# Error: OpenRouter API key not configured\n# Please add OPENROUTER_API_KEY to .env file\n\ndef solution():\n    return 0"
         
+        # CHANGE 4: OpenRouter requires additional headers
         headers = {
             "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "HTTP-Referer": "http://localhost:3000",  # Required by OpenRouter
+            "X-Title": "Direct Code Generator"         # Required by OpenRouter
         }
         
+        # CHANGE 5: Use Llama 3.3 70B on OpenRouter (free tier)
         data = {
-            "model": "llama-3.1-8b-instant",
+            "model": "meta-llama/llama-3.3-70b-instruct:free",  # Llama 3.3 70B free tier
             "messages": [{"role": "user", "content": prompt}],
             "max_tokens": max_tokens,
-            "temperature": temperature
+            "temperature": temperature,
+            "top_p": 0.95
         }
         
         max_retries = 5
@@ -202,15 +216,22 @@ Code:"""
                         continue
                     else:
                         print("  ❌ Rate limit exceeded after all retries")
-                        return "Error: Rate limit exceeded after retries"
+                        return "# Error: Rate limit exceeded after retries"
                 
                 if response.status_code != 200:
                     print(f"  ⚠️  API Error {response.status_code}")
-                    return f"Error: API Error {response.status_code}"
+                    # Try to get error message from OpenRouter
+                    try:
+                        error_data = response.json()
+                        error_msg = error_data.get('error', {}).get('message', 'Unknown error')
+                        print(f"  💡 OpenRouter says: {error_msg}")
+                    except:
+                        pass
+                    return f"# Error: API Error {response.status_code}"
                 
                 response_data = response.json()
                 if "choices" not in response_data:
-                    return "Error: Unexpected API response"
+                    return "# Error: Unexpected API response"
                 
                 return response_data["choices"][0]["message"]["content"].strip()
                 
@@ -220,9 +241,9 @@ Code:"""
                     print(f"  ⏳ Error: {str(e)}, retrying in {wait_time:.1f}s...")
                     time.sleep(wait_time)
                     continue
-                return f"Error: {str(e)}"
+                return f"# Error: {str(e)}"
         
-        return "Error: Max retries exceeded"
+        return "# Error: Max retries exceeded"
     
     def generate_for_problem(self, problem_data: dict) -> Tuple[str, float]:
         """Direct code generation for a specific LeetCode problem"""
@@ -289,7 +310,7 @@ CODE:"""
         
         with open(filename, "w", encoding='utf-8') as f:
             f.write(f"# DIRECT GENERATION - Problem {problem_id}\n")
-            f.write("# Generated without debate\n")
+            f.write("# Generated without debate (OpenRouter)\n")
             f.write(f"# Syntax valid: {self._validate_code_syntax(code)}\n\n")
             f.write(code)
         print(f"  ✓ Saved to {filename}")
@@ -303,7 +324,25 @@ if __name__ == "__main__":
     test_problem = {
         "id": 42,
         "title": "Trapping Rain Water",
-        "description": "Given n non-negative integers representing an elevation map...",
+        "description": """Given n non-negative integers representing an elevation map where the width of each bar is 1,
+compute how much water it can trap after raining.
+
+Example 1:
+Input: height = [0,1,0,2,1,0,1,3,2,1,2,1]
+Output: 6
+
+Example 2:
+Input: height = [4,2,0,3,2,5]
+Output: 9
+
+Constraints:
+- n == height.length
+- 1 <= n <= 2 * 10^4
+- 0 <= height[i] <= 10^5
+
+Requirements:
+- Time complexity: O(n)
+- Space complexity: O(1) ideally, O(n) acceptable""",
         "function_signature": "def trap(height: List[int]) -> int:"
     }
     

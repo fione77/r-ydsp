@@ -1,6 +1,6 @@
 """
-Socratic Code Generator - FOR LEETCODE HARD PROBLEMS - FIXED VERSION
-Generates code through debate and synthesis
+Socratic Code Generator - FOR LEETCODE HARD PROBLEMS - FLEXIBLE VERSION
+Generates code through flexible debate and blueprint validation
 """
 import os
 import time
@@ -14,281 +14,312 @@ warnings.filterwarnings('ignore', message='Unverified HTTPS request')
 load_dotenv()
 
 
-class MultiTurnDebate:
-    """Manages multi-turn debate between three personas"""
+class FlexibleDebateValidator:
+    """Flexible debate with blueprint validation"""
     
     def __init__(self, api_caller):
         self._make_api_call = api_caller
         
-        # System prompts for each persona (unchanged)
-        self.architect_system = """You are THE ARCHITECT - a systems thinking expert..."""
-        self.tester_system = """You are THE TESTER - a skeptical empiricist focused on robustness..."""
-        self.optimizer_system = """You are THE OPTIMIZER - a performance realist and pragmatist..."""
+        # ========== MORE FLEXIBLE PERSONAS ==========
+        self.advisor_system = """You are a CODING ADVISOR - Help design optimal solutions
+
+YOUR ROLE:
+1. Analyze the problem type and constraints
+2. Suggest 2-3 viable approaches with trade-offs
+3. Recommend the best approach for given constraints
+4. Outline key algorithmic insights
+
+FORMAT:
+PROBLEM ANALYSIS:
+- Type: [type]
+- Key constraints: [list]
+
+APPROACHES:
+1. [Approach 1]: [pros/cons] - [time/space]
+2. [Approach 2]: [pros/cons] - [time/space]
+3. [Approach 3]: [pros/cons] - [time/space]
+
+RECOMMENDATION:
+- Best: [approach] because [reason]
+- Key insight: [main algorithmic idea]
+- Potential pitfalls: [what to watch for]"""
+
+        self.blueprint_system = """You are a BLUEPRINT ENGINEER - Create concrete implementation plans
+
+YOUR ROLE:
+1. Based on the recommendation, create detailed implementation blueprint
+2. Include function signatures, data structures, and key algorithms
+3. Add pseudocode for complex parts
+4. Note edge cases to handle
+
+FORMAT:
+BLUEPRINT FOR: [approach name]
+
+IMPLEMENTATION STRUCTURE:
+- Main function: [signature]
+- Key helper functions: [list]
+- Data structures: [list with purposes]
+
+PSEUDOCODE:
+[Step-by-step pseudocode showing algorithm flow]
+
+EDGE CASES TO HANDLE:
+1. [case 1]: [how to handle]
+2. [case 2]: [how to handle]
+3. [case 3]: [how to handle]
+
+COMPLEXITY VERIFICATION:
+- Time: O(?) - [justification]
+- Space: O(?) - [justification]"""
+
+        self.validator_system = """You are a REALITY VALIDATOR - Check blueprints against reality
+
+YOUR ROLE:
+1. Verify the blueprint matches problem requirements
+2. Test the pseudocode with given examples
+3. Identify logical gaps or errors
+4. Suggest concrete fixes
+
+FORMAT:
+VALIDATION REPORT:
+
+CORRECTNESS CHECK:
+- Matches problem: ✓/✗ [explain]
+- Handles examples: ✓/✗ [show test]
+- Satisfies constraints: ✓/✗ [time/space]
+
+LOGICAL GAPS:
+1. [gap 1]: [why it's a problem]
+2. [gap 2]: [why it's a problem]
+
+ERRORS FOUND:
+1. [error 1]: [specific fix]
+2. [error 2]: [specific fix]
+
+CONCRETE IMPROVEMENTS:
+[Specific changes needed in blueprint]"""
     
-    def conduct_multi_turn_debate(self, problem: str, plan: str) -> str:
-        """Run multi-turn debate with separate API calls per persona"""
-        print("  (Each persona responds separately in sequence)")
+    def conduct_flexible_debate(self, problem: str) -> str:
+        """Run flexible debate with blueprint validation"""
+        print("  🔄 Starting flexible debate with blueprint...")
         
         debate_log = []
         debate_log.append(f"PROBLEM:\n{problem}\n")
-        debate_log.append(f"\nDEBATE AGENDA:\n{plan}\n")
         debate_log.append("\n" + "="*70)
-        debate_log.append("DEBATE BEGINS - MULTI-TURN CONVERSATION")
+        debate_log.append("FLEXIBLE DEBATE WITH BLUEPRINT VALIDATION")
         debate_log.append("="*70 + "\n")
         
-        context = f"Problem: {problem}\n\nAgenda: {plan}\n\n"
+        # ========== PHASE 1: INITIAL ANALYSIS ==========
+        debate_log.append("\n--- PHASE 1: PROBLEM ANALYSIS ---\n")
         
-        # ROUND 1
-        debate_log.append("\n--- ROUND 1: INITIAL EXPLORATION ---\n")
-        
-        print("  🏗️  ARCHITECT thinking...")
-        architect_r1 = self._make_api_call(
-            f"{self.architect_system}\n\nDEBATE CONTEXT:\n{context}\n\nYOUR TURN: Start the debate...",
-            max_tokens=300, temperature=0.85
+        print("  🧠 ADVISOR analyzing problem...")
+        advisor = self._make_api_call(
+            f"{self.advisor_system}\n\nPROBLEM:\n{problem}\n\nAnalyze this problem and recommend approaches.",
+            max_tokens=800, temperature=0.7
         )
-        debate_log.append(f"🏗️ ARCHITECT:\n{architect_r1}\n")
-        context += f"ARCHITECT: {architect_r1}\n\n"
-        
+        debate_log.append(f"🧠 ADVISOR:\n{advisor}\n")
         time.sleep(2)
         
-        print("  🔬 TESTER thinking...")
-        tester_r1 = self._make_api_call(
-            f"{self.tester_system}\n\nDEBATE CONTEXT:\n{context}\n\nYOUR TURN: Respond to ARCHITECT...",
-            max_tokens=300, temperature=0.85
-        )
-        debate_log.append(f"🔬 TESTER:\n{tester_r1}\n")
-        context += f"TESTER: {tester_r1}\n\n"
+        # ========== PHASE 2: BLUEPRINT CREATION ==========
+        debate_log.append("\n--- PHASE 2: BLUEPRINT CREATION ---\n")
         
+        print("  📐 ENGINEER creating blueprint...")
+        blueprint = self._make_api_call(
+            f"{self.blueprint_system}\n\nADVISOR'S ANALYSIS:\n{advisor}\n\nPROBLEM:\n{problem}\n\nCreate a detailed blueprint for the recommended approach.",
+            max_tokens=1200, temperature=0.6
+        )
+        debate_log.append(f"📐 ENGINEER (BLUEPRINT):\n{blueprint}\n")
         time.sleep(2)
         
-        print("  ⚡ OPTIMIZER thinking...")
-        optimizer_r1 = self._make_api_call(
-            f"{self.optimizer_system}\n\nDEBATE CONTEXT:\n{context}\n\nYOUR TURN: Respond to both...",
-            max_tokens=300, temperature=0.85
-        )
-        debate_log.append(f"⚡ OPTIMIZER:\n{optimizer_r1}\n")
-        context += f"OPTIMIZER: {optimizer_r1}\n\n"
+        # ========== PHASE 3: BLUEPRINT VALIDATION ==========
+        debate_log.append("\n--- PHASE 3: BLUEPRINT VALIDATION ---\n")
         
+        print("  🔍 VALIDATOR checking blueprint...")
+        validator = self._make_api_call(
+            f"{self.validator_system}\n\nPROBLEM:\n{problem}\n\nADVISOR'S ANALYSIS:\n{advisor}\n\nBLUEPRINT:\n{blueprint}\n\nValidate this blueprint and suggest fixes.",
+            max_tokens=1000, temperature=0.6
+        )
+        debate_log.append(f"🔍 VALIDATOR:\n{validator}\n")
         time.sleep(2)
         
-        # ROUND 2
-        debate_log.append("\n--- ROUND 2: EXPLORING TRADE-OFFS ---\n")
+        # ========== PHASE 4: FINAL SYNTHESIS ==========
+        debate_log.append("\n--- PHASE 4: FINAL SYNTHESIS ---\n")
         
-        print("  🏗️  ARCHITECT refining...")
-        architect_r2 = self._make_api_call(
-            f"{self.architect_system}\n\nDEBATE CONTEXT:\n{context}\n\nYOUR TURN: Refine your thinking...",
-            max_tokens=300, temperature=0.85
+        print("  📐 ENGINEER finalizing blueprint...")
+        final_blueprint = self._make_api_call(
+            f"{self.blueprint_system}\n\nPROBLEM:\n{problem}\n\nORIGINAL BLUEPRINT:\n{blueprint}\n\nVALIDATOR'S FEEDBACK:\n{validator}\n\nCreate a FINAL, CORRECTED blueprint incorporating all fixes.",
+            max_tokens=1200, temperature=0.5
         )
-        debate_log.append(f"🏗️ ARCHITECT:\n{architect_r2}\n")
-        context += f"ARCHITECT: {architect_r2}\n\n"
-        
-        time.sleep(2)
-        
-        print("  🔬 TESTER probing...")
-        tester_r2 = self._make_api_call(
-            f"{self.tester_system}\n\nDEBATE CONTEXT:\n{context}\n\nYOUR TURN: Probe deeper...",
-            max_tokens=300, temperature=0.85
-        )
-        debate_log.append(f"🔬 TESTER:\n{tester_r2}\n")
-        context += f"TESTER: {tester_r2}\n\n"
-        
-        time.sleep(2)
-        
-        print("  ⚡ OPTIMIZER evaluating...")
-        optimizer_r2 = self._make_api_call(
-            f"{self.optimizer_system}\n\nDEBATE CONTEXT:\n{context}\n\nYOUR TURN: Evaluate trade-offs...",
-            max_tokens=300, temperature=0.85
-        )
-        debate_log.append(f"⚡ OPTIMIZER:\n{optimizer_r2}\n")
+        debate_log.append(f"📐 ENGINEER (FINAL BLUEPRINT):\n{final_blueprint}\n")
         
         debate_log.append("\n" + "="*70)
-        debate_log.append("DEBATE CONCLUDED")
+        debate_log.append("DEBATE-BLUEPRINT-DEBATE COMPLETED")
         debate_log.append("="*70)
         
-        return "\n".join(debate_log)
+        return "\n".join(debate_log), final_blueprint
 
 
 class SocraticCodeGenerator:
     def __init__(self):
-        self.api_key = os.getenv("GROQ_API_KEY")
-        self.api_url = "https://api.groq.com/openai/v1/chat/completions"
-        print(f"🤖 Socratic Generator initialized")
+        # CHANGE 1: Switch to OpenRouter API key
+        self.api_key = os.getenv("OPENROUTER_API_KEY")  # Changed from GROQ_API_KEY
+        self.api_url = "https://openrouter.ai/api/v1/chat/completions"  # Changed URL
+        print(f"🤖 Socratic Generator initialized (OpenRouter - Flexible Debate)")
         
+        # Test API
+        test_response = self._make_api_call("Say 'OpenRouter test successful'", max_tokens=20, temperature=0.1)
+        print(f"🔧 API Test: {'✅ Working' if 'test' in test_response.lower() else f'❌ Failed: {test_response}'}")
+    
     def _clean_generated_code(self, code: str) -> str:
-        """Clean LLM-generated code - IMPROVED VERSION"""
-        # Remove markdown code blocks
+        """Clean LLM-generated code"""
         code = re.sub(r'```python\s*', '', code)
         code = re.sub(r'```\s*', '', code)
-        
-        # Split into lines
-        lines = code.split('\n')
-        cleaned_lines = []
-        
-        # Track if we're in actual code
-        in_code_block = False
-        found_first_code_line = False
-        
-        # Phrases that indicate non-code text (to be removed)
-        explanatory_phrases = [
-            "this code", "here's", "here is", "i'll", "let me", 
-            "the following", "below is", "this implementation",
-            "the code above", "in summary", "to summarize",
-            "the solution", "this function", "the algorithm",
-            "in conclusion", "in this code", "as shown above",
-            "explanation:", "note:", "important:", "example:"
-        ]
-        
-        for line in lines:
-            stripped = line.strip()
-            
-            # Skip empty lines at the beginning
-            if not found_first_code_line and not stripped:
-                continue
-                
-            # Check if line looks like code
-            is_code_like = (
-                stripped.startswith(('#', 'import ', 'from ', 'def ', 'class ', '@')) or
-                stripped.endswith(':') or
-                ' = ' in line or
-                '):' in line or
-                re.match(r'^\s*(if |for |while |def |class |return |yield |raise |try:|except |finally:)', stripped)
-            )
-            
-            # Check if line is explanatory text (not code)
-            is_explanatory = any(phrase in stripped.lower() for phrase in explanatory_phrases)
-            
-            # Once we find real code, start collecting
-            if is_code_like and not is_explanatory:
-                found_first_code_line = True
-                in_code_block = True
-                cleaned_lines.append(line)
-            elif in_code_block:
-                # We're in a code block, keep adding lines
-                cleaned_lines.append(line)
-            elif not found_first_code_line and stripped:
-                # Haven't found code yet, skip explanatory lines
-                if not is_explanatory and len(stripped) < 100:
-                    cleaned_lines.append(line)
-        
-        code = '\n'.join(cleaned_lines).strip()
-        
-        # Remove trailing non-code text after the last function/class
-        lines = code.split('\n')
-        last_code_line_index = -1
-        
-        for i, line in enumerate(lines):
-            stripped = line.strip()
-            if stripped.startswith(('def ', 'class ', '@')):
-                last_code_line_index = i
-        
-        if last_code_line_index >= 0:
-            # Find where actual code ends
-            for i in range(last_code_line_index + 1, len(lines)):
-                stripped = lines[i].strip()
-                # Check if this looks like non-code after the main code
-                if stripped and not stripped.startswith('#') and len(stripped) > 100:
-                    # Likely explanatory text, cut off here
-                    code = '\n'.join(lines[:i])
-                    break
-        
-        # Final cleanup: remove any lines that are pure English sentences
-        final_lines = []
-        for line in code.split('\n'):
-            stripped = line.strip()
-            if not stripped:
-                final_lines.append(line)
-                continue
-                
-            # Skip lines that look like paragraphs of text
-            words = stripped.split()
-            if (len(words) > 8 and 
-                not stripped.startswith('#') and
-                not '=' in stripped and
-                not ':' in stripped and
-                not stripped.endswith(':')):
-                # Looks like a sentence, not code
-                continue
-                
-            final_lines.append(line)
-        
-        return '\n'.join(final_lines).strip()
+        return code.strip()
     
-    def _validate_code_syntax(self, code: str) -> bool:
-        """Quick syntax validation"""
-        try:
-            import ast
-            ast.parse(code)
-            return True
-        except SyntaxError:
-            return False
-    
-    def _retry_with_stricter_prompt(self, problem: str, debate: str, attempt: int) -> str:
-        """Retry code generation with stricter prompt"""
-        stricter_prompt = f"""Write Python code to solve this LeetCode problem:
-
-{problem}
-
-Based on debate insights: {debate[-500:]}
-
-IMPORTANT: Provide ONLY the Python code. NO explanations, NO comments outside code blocks, 
-NO text before or after the code. The code must be syntactically correct and complete.
-
-Start with imports or function/class definition. End with the last line of code.
-DO NOT add any explanatory text.
-
-Code:"""
-        
-        return self._make_api_call(stricter_prompt, max_tokens=2500, temperature=0.2)
-    
-    def _make_api_call(self, prompt: str, max_tokens: int, temperature: float = 0.7) -> str:
-        """Make API call with retry logic"""
+    def _make_api_call(self, prompt: str, max_tokens: int, temperature: float = 0.7, model: str = None) -> str:
+        """Make API call to OpenRouter with retry logic"""
         if not self.api_key:
-            return "Error: GROQ_API_KEY not found"
+            return "Error: OPENROUTER_API_KEY not found in environment variables"
         
+        # CHANGE 2: OpenRouter headers and data structure
         headers = {
             "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "HTTP-Referer": "http://localhost:3000",  # Required by OpenRouter
+            "X-Title": "Socratic Code Generator"       # Your app name
         }
         
+        # CHANGE 3: Choose OpenRouter model (Llama 3.3 70B)
+        if model is None:
+            # Using the free tier model first
+            model = "meta-llama/llama-3.3-70b-instruct:free"
+        
         data = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "top_p": 0.95,
+            "frequency_penalty": 0,
+            "presence_penalty": 0
+        }
+        
+        for attempt in range(3):
+            try:
+                response = requests.post(
+                    self.api_url, 
+                    headers=headers, 
+                    json=data, 
+                    timeout=120  # Longer timeout for larger models
+                )
+                
+                # CHANGE 4: Handle OpenRouter-specific rate limits
+                if response.status_code == 429:
+                    error_msg = response.json().get("error", {}).get("message", "")
+                    if "free tier" in error_msg.lower() and attempt == 0:
+                        print("    ⚠️ Free tier limit, switching to paid model...")
+                        # Switch to paid model
+                        data["model"] = model.replace(":free", "")
+                        continue
+                    
+                    wait_time = 5 * (attempt + 1)
+                    print(f"    ⚠️ Rate limited, waiting {wait_time}s...")
+                    time.sleep(wait_time)
+                    continue
+                
+                if response.status_code != 200:
+                    error_msg = f"OpenRouter Error {response.status_code}"
+                    try:
+                        error_data = response.json()
+                        if "error" in error_data:
+                            error_msg += f": {error_data['error'].get('message', 'Unknown')}"
+                    except:
+                        pass
+                    print(f"    ❌ {error_msg}")
+                    
+                    # Fallback to Groq if OpenRouter fails
+                    if attempt == 2:
+                        return self._fallback_to_groq(prompt, max_tokens, temperature)
+                    continue
+                
+                response_data = response.json()
+                if "choices" not in response_data or not response_data["choices"]:
+                    return "Error: No choices in response"
+                
+                content = response_data["choices"][0]["message"]["content"].strip()
+                return content if content else "Error: Empty response content"
+                
+            except Exception as e:
+                print(f"    ⚠️ Exception: {str(e)[:100]}")
+                if attempt < 2:
+                    time.sleep(2)
+                    continue
+                return f"Error: {str(e)[:100]}"
+        
+        return "Error: Max retries exceeded"
+    
+    def _fallback_to_groq(self, prompt: str, max_tokens: int, temperature: float) -> str:
+        """Fallback to Groq if OpenRouter fails"""
+        print("    🔄 Falling back to Groq...")
+        
+        groq_api_key = os.getenv("GROQ_API_KEY")
+        if not groq_api_key:
+            return "Error: No fallback API available"
+        
+        groq_headers = {"Authorization": f"Bearer {groq_api_key}", "Content-Type": "application/json"}
+        groq_data = {
             "model": "llama-3.1-8b-instant",
             "messages": [{"role": "user", "content": prompt}],
             "max_tokens": max_tokens,
             "temperature": temperature
         }
         
-        max_retries = 3
-        
-        for attempt in range(max_retries):
-            try:
-                response = requests.post(
-                    self.api_url, 
-                    headers=headers, 
-                    json=data, 
-                    verify=False, 
-                    timeout=90
-                )
-                
-                if response.status_code == 429:
-                    time.sleep(2 * (attempt + 1))
-                    continue
-                
-                if response.status_code != 200:
-                    continue
-                
+        try:
+            response = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers=groq_headers,
+                json=groq_data,
+                timeout=90
+            )
+            
+            if response.status_code == 200:
                 response_data = response.json()
-                if "choices" not in response_data:
-                    continue
-                
                 return response_data["choices"][0]["message"]["content"].strip()
-                
-            except Exception:
-                time.sleep(1)
+            
+        except Exception as e:
+            return f"Groq fallback failed: {str(e)[:100]}"
         
-        return ""
+        return "Error: All API providers failed"
+    
+    def _generate_code_from_blueprint(self, problem: str, blueprint: str) -> str:
+        """Generate code from validated blueprint"""
+        prompt = f"""Convert this blueprint into complete Python code:
+
+PROBLEM:
+{problem}
+
+VALIDATED BLUEPRINT:
+{blueprint}
+
+Write complete, executable Python code that implements the blueprint exactly.
+Include all necessary imports and handle all edge cases mentioned.
+
+IMPORTANT: 
+1. Follow the blueprint structure exactly
+2. Implement all helper functions mentioned
+3. Add docstrings explaining the algorithm
+4. Ensure time and space complexity match the blueprint
+
+Return ONLY the Python code, no explanations.
+
+CODE:"""
+        
+        # Use the free model for code generation
+        code = self._make_api_call(prompt, max_tokens=2000, temperature=0.3)
+        return self._clean_generated_code(code)
     
     def generate_for_problem(self, problem_data: dict) -> Tuple[dict, float]:
-        """Full Socratic generation process for a specific problem"""
+        """Full Socratic generation with flexible debate"""
         problem_id = problem_data.get("id", "Unknown")
         title = problem_data.get("title", "")
         description = problem_data.get("description", "")
@@ -302,64 +333,47 @@ Code:"""
         
         full_problem = f"{title}\n\n{description}"
         
-        # Step 1: Plan
-        print("\n📋 Planning debate...")
-        plan_prompt = f"""Analyze this coding problem and create a debate agenda:
-
-{full_problem}
-
-List key approaches, trade-offs, and edge cases to debate."""
+        # Step 1: Flexible debate with blueprint
+        print("\n💭 Conducting flexible debate with blueprint...")
+        debate_manager = FlexibleDebateValidator(self._make_api_call)
+        debate_log, final_blueprint = debate_manager.conduct_flexible_debate(full_problem)
+        results['debate'] = debate_log
+        results['blueprint'] = final_blueprint
         
-        plan = self._make_api_call(plan_prompt, max_tokens=400, temperature=0.8)
-        results['plan'] = plan
-        print(f"  ✓ Planning completed")
-        
+        print(f"  ✓ Debate completed, blueprint ready ({len(final_blueprint)} chars)")
         time.sleep(2)
         
-        # Step 2: Debate
-        print("\n💬 Conducting debate...")
-        debate_manager = MultiTurnDebate(self._make_api_call)
-        debate = debate_manager.conduct_multi_turn_debate(full_problem, plan)
-        results['debate'] = debate
-        print(f"  ✓ Debate completed")
+        # Step 2: Generate code from validated blueprint
+        print("\n⚙️  Generating code from validated blueprint...")
+        code = self._generate_code_from_blueprint(full_problem, final_blueprint)
         
-        time.sleep(2)
-        
-        # Step 3: Synthesize with retry logic
-        print("\n⚙️  Synthesizing code...")
-        
-        # First attempt
-        synth_prompt = f"""Based on this debate, write Python code to solve:
-
-{full_problem}
-
-DEBATE INSIGHTS:
-{debate[-1000:]}
-
-Write complete, executable Python code. Include all necessary imports and handle edge cases.
-
-IMPORTANT: Provide ONLY the Python code. No explanations before or after.
-
-Code:"""
-        
-        code = self._make_api_call(synth_prompt, max_tokens=2500, temperature=0.3)
-        code = self._clean_generated_code(code)
-        
-        # Validate and retry if needed
+        # Syntax validation and retry
         max_retries = 2
         for attempt in range(max_retries):
-            if self._validate_code_syntax(code):
-                break
-            print(f"  ⚠️  Syntax error detected, retry {attempt + 1}/{max_retries}...")
-            code = self._retry_with_stricter_prompt(full_problem, debate, attempt)
-            code = self._clean_generated_code(code)
+            try:
+                import ast
+                ast.parse(code)
+                break  # Syntax is valid
+            except SyntaxError:
+                print(f"  ⚠️  Syntax error, retry {attempt + 1}/{max_retries}...")
+                # Retry with stricter prompt
+                retry_prompt = f"""Fix syntax errors in this code for problem:
+
+{full_problem}
+
+Code with errors:
+{code}
+
+Provide ONLY the corrected Python code, no explanations:"""
+                
+                code = self._make_api_call(retry_prompt, max_tokens=2000, temperature=0.2)
+                code = self._clean_generated_code(code)
         
         results['code'] = code
         results['total_time'] = time.time() - total_start
         
         print(f"\n📊 Generation completed in {results['total_time']:.1f}s")
         print(f"  Code length: {len(code)} characters")
-        print(f"  Syntax valid: {self._validate_code_syntax(code)}")
         
         return results, results['total_time']
     
@@ -369,27 +383,98 @@ Code:"""
         code_file = f"socratic_{problem_id}.py"
         with open(code_file, "w", encoding='utf-8') as f:
             f.write(f"# SOCRATIC GENERATION - Problem {problem_id}\n")
-            f.write("# Generated after debate synthesis\n\n")
+            f.write("# Generated from validated blueprint (OpenRouter)\n\n")
             f.write(results['code'])
         print(f"  ✓ Saved code to {code_file}")
         
-        # Save debate
-        debate_file = f"debate_{problem_id}.txt"
-        with open(debate_file, "w", encoding='utf-8') as f:
-            f.write(f"DEBATE TRANSCRIPT - Problem {problem_id}\n")
+        # Save blueprint
+        blueprint_file = f"blueprint_{problem_id}.txt"
+        with open(blueprint_file, "w", encoding='utf-8') as f:
+            f.write(f"VALIDATED BLUEPRINT - Problem {problem_id}\n")
             f.write("="*70 + "\n\n")
-            f.write(results.get('debate', 'No debate generated'))
-        print(f"  ✓ Saved debate to {debate_file}")
+            f.write(results.get('blueprint', 'No blueprint generated'))
+        print(f"  ✓ Saved blueprint to {blueprint_file}")
+
+
+# ADD THIS: Test function for OpenRouter connection
+def test_openrouter_connection():
+    """Test OpenRouter connection before running main"""
+    from dotenv import load_dotenv
+    load_dotenv()
+    
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        print("❌ OPENROUTER_API_KEY not found in .env file")
+        print("Please add: OPENROUTER_API_KEY=your-key-here")
+        return False
+    
+    print("✅ OPENROUTER_API_KEY found")
+    
+    # Quick test
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    try:
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers=headers,
+            json={
+                "model": "meta-llama/llama-3.3-70b-instruct:free",
+                "messages": [{"role": "user", "content": "Say 'test successful'"}],
+                "max_tokens": 10
+            },
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            print("✅ OpenRouter connection successful!")
+            return True
+        else:
+            print(f"❌ OpenRouter error: {response.status_code}")
+            print(response.text)
+            return False
+            
+    except Exception as e:
+        print(f"❌ Connection failed: {e}")
+        return False
 
 
 if __name__ == "__main__":
+    # Test connection first
+    if not test_openrouter_connection():
+        print("\n⚠️  OpenRouter connection failed. Please check:")
+        print("1. Your .env file has OPENROUTER_API_KEY")
+        print("2. You have credits on OpenRouter")
+        print("3. Your internet connection is working")
+        exit(1)
+    
     generator = SocraticCodeGenerator()
     
     # Example problem
     test_problem = {
         "id": 42,
         "title": "Trapping Rain Water",
-        "description": "Given n non-negative integers representing an elevation map..."
+        "description": """Given n non-negative integers representing an elevation map where the width of each bar is 1,
+compute how much water it can trap after raining.
+
+Example 1:
+Input: height = [0,1,0,2,1,0,1,3,2,1,2,1]
+Output: 6
+
+Example 2:
+Input: height = [4,2,0,3,2,5]
+Output: 9
+
+Constraints:
+- n == height.length
+- 1 <= n <= 2 * 10^4
+- 0 <= height[i] <= 10^5
+
+Requirements:
+- Time complexity: O(n)
+- Space complexity: O(1) ideally, O(n) acceptable"""
     }
     
     results, timing = generator.generate_for_problem(test_problem)
