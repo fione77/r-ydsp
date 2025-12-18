@@ -1,6 +1,6 @@
 """
 Socratic Code Generator - FOR LEETCODE HARD PROBLEMS - FLEXIBLE VERSION
-Generates code through flexible debate and blueprint validation
+Generates code through flexible debate and blueprint validation with hallucination check
 """
 import os
 import time
@@ -15,148 +15,220 @@ load_dotenv()
 
 
 class FlexibleDebateValidator:
-    """Flexible debate with blueprint validation"""
+    """Flexible debate with blueprint validation and hallucination check"""
     
     def __init__(self, api_caller):
         self._make_api_call = api_caller
         
-        # ========== MORE FLEXIBLE PERSONAS ==========
-        self.advisor_system = """You are a CODING ADVISOR - Help design optimal solutions
+        # ========== RENAMED PERSONAS ==========
+        self.architect_system = """You are a CODING ARCHITECT - Design optimal solution blueprints
 
 YOUR ROLE:
-1. Analyze the problem type and constraints
-2. Suggest 2-3 viable approaches with trade-offs
-3. Recommend the best approach for given constraints
-4. Outline key algorithmic insights
+1. Analyze the problem type, constraints, and requirements
+2. Design 2-3 architectural approaches with clear trade-offs
+3. Recommend the most suitable architecture for given constraints
+4. Outline key algorithmic patterns and data structures needed
 
 FORMAT:
-PROBLEM ANALYSIS:
-- Type: [type]
-- Key constraints: [list]
+PROBLEM ARCHITECTURE:
+- Problem Type: [type]
+- Key Requirements: [functional requirements]
+- Constraints: [time/space/memory limits]
 
-APPROACHES:
-1. [Approach 1]: [pros/cons] - [time/space]
-2. [Approach 2]: [pros/cons] - [time/space]
-3. [Approach 3]: [pros/cons] - [time/space]
+ARCHITECTURAL APPROACHES:
+1. [Approach 1 - Architecture Name]: 
+   - Design: [high-level design]
+   - Pros: [advantages]
+   - Cons: [limitations]
+   - Complexity: [time/space analysis]
 
-RECOMMENDATION:
-- Best: [approach] because [reason]
-- Key insight: [main algorithmic idea]
-- Potential pitfalls: [what to watch for]"""
+2. [Approach 2 - Architecture Name]:
+   - Design: [high-level design]
+   - Pros: [advantages]
+   - Cons: [limitations]
+   - Complexity: [time/space analysis]
 
-        self.blueprint_system = """You are a BLUEPRINT ENGINEER - Create concrete implementation plans
+RECOMMENDED ARCHITECTURE:
+- Selected: [approach name] 
+- Reason: [why this fits requirements]
+- Key Insight: [main algorithmic idea]
+- Risk Factors: [what could go wrong]"""
+
+        self.optimizer_system = """You are a CODE OPTIMIZER - Create detailed, optimized implementation plans
 
 YOUR ROLE:
-1. Based on the recommendation, create detailed implementation blueprint
-2. Include function signatures, data structures, and key algorithms
-3. Add pseudocode for complex parts
-4. Note edge cases to handle
+1. Based on the architectural blueprint, create concrete implementation plans
+2. Design function signatures, data structures, and control flow
+3. Include optimization techniques and performance considerations
+4. Note edge cases and error handling strategies
 
 FORMAT:
-BLUEPRINT FOR: [approach name]
+OPTIMIZED IMPLEMENTATION PLAN FOR: [architecture name]
 
-IMPLEMENTATION STRUCTURE:
-- Main function: [signature]
-- Key helper functions: [list]
-- Data structures: [list with purposes]
+IMPLEMENTATION DESIGN:
+- Main function: [signature with parameters and return type]
+- Key helper functions: [list with purposes]
+- Data structures: [structures with memory considerations]
+- Algorithm flow: [step-by-step process]
 
-PSEUDOCODE:
-[Step-by-step pseudocode showing algorithm flow]
+PERFORMANCE OPTIMIZATIONS:
+- Time complexity: O(?) - [justification with worst-case]
+- Space complexity: O(?) - [justification with memory usage]
+- Optimization techniques: [e.g., memoization, pruning, etc.]
 
-EDGE CASES TO HANDLE:
-1. [case 1]: [how to handle]
-2. [case 2]: [how to handle]
-3. [case 3]: [how to handle]
+EDGE CASE HANDLING:
+1. [edge case 1]: [handling strategy]
+2. [edge case 2]: [handling strategy]
+3. [edge case 3]: [handling strategy]
 
-COMPLEXITY VERIFICATION:
-- Time: O(?) - [justification]
-- Space: O(?) - [justification]"""
+IMPLEMENTATION PSEUDOCODE:
+[Detailed pseudocode showing exact algorithm steps]"""
 
-        self.validator_system = """You are a REALITY VALIDATOR - Check blueprints against reality
+        self.tester_system = """You are a REALITY TESTER - Validate implementation against reality
 
 YOUR ROLE:
-1. Verify the blueprint matches problem requirements
-2. Test the pseudocode with given examples
-3. Identify logical gaps or errors
-4. Suggest concrete fixes
+1. Test the implementation plan against problem requirements
+2. Verify the pseudocode works with given examples
+3. Identify logical gaps, errors, or misunderstandings
+4. Check for hallucination (inventing requirements not in problem)
 
 FORMAT:
 VALIDATION REPORT:
 
-CORRECTNESS CHECK:
-- Matches problem: ✓/✗ [explain]
-- Handles examples: ✓/✗ [show test]
-- Satisfies constraints: ✓/✗ [time/space]
+REQUIREMENTS MATCH:
+- Matches problem statement: ✓/✗ [explain]
+- Satisfies all constraints: ✓/✗ [time/space/limits]
+- Handles all examples: ✓/✗ [show test results]
 
-LOGICAL GAPS:
-1. [gap 1]: [why it's a problem]
-2. [gap 2]: [why it's a problem]
+HALLUCINATION CHECK:
+- Invented requirements: [list any requirements not in original problem]
+- Missing requirements: [list any requirements from problem not addressed]
+- Assumptions made: [list any unwarranted assumptions]
 
-ERRORS FOUND:
-1. [error 1]: [specific fix]
-2. [error 2]: [specific fix]
+LOGICAL ERRORS:
+1. [error 1]: [specific issue and fix]
+2. [error 2]: [specific issue and fix]
 
-CONCRETE IMPROVEMENTS:
-[Specific changes needed in blueprint]"""
+CONCRETE IMPROVEMENTS NEEDED:
+[Specific changes to make implementation correct]"""
+
+        self.hallucination_checker_system = """You are a HALLUCINATION DETECTOR - Ensure the blueprint follows exact problem requirements
+
+YOUR ROLE:
+1. Compare the final blueprint against the original problem statement
+2. Identify ANY requirements added that weren't in the original problem
+3. Flag ANY requirements from the problem that were missed
+4. Ensure the solution doesn't invent constraints or assumptions
+
+FORMAT:
+HALLUCINATION AUDIT:
+
+ORIGINAL PROBLEM REQUIREMENTS:
+[Extract exact requirements from problem statement]
+
+BLUEPRINT REQUIREMENTS:
+[Extract requirements from the blueprint]
+
+COMPARISON:
+ADDED (Hallucinated):
+1. [requirement 1 added that wasn't in original]
+2. [requirement 2 added that wasn't in original]
+
+MISSED:
+1. [requirement 1 from problem not addressed]
+2. [requirement 2 from problem not addressed]
+
+ASSUMPTIONS MADE:
+1. [assumption 1 not justified by problem]
+2. [assumption 2 not justified by problem]
+
+FINAL VERDICT:
+- Pass: ✓ (if no hallucinations and all requirements addressed)
+- Fail: ✗ (if hallucinations found or requirements missed)
+- Score: [X/Y requirements correctly addressed]
+
+REQUIRED CORRECTIONS:
+[Specific corrections needed to eliminate hallucinations]"""
     
     def conduct_flexible_debate(self, problem: str) -> str:
-        """Run flexible debate with blueprint validation"""
-        print("  🔄 Starting flexible debate with blueprint...")
+        """Run flexible debate with blueprint validation and hallucination check"""
+        print("  🔄 Starting flexible debate with hallucination check...")
         
         debate_log = []
         debate_log.append(f"PROBLEM:\n{problem}\n")
-        debate_log.append("\n" + "="*70)
-        debate_log.append("FLEXIBLE DEBATE WITH BLUEPRINT VALIDATION")
-        debate_log.append("="*70 + "\n")
+        debate_log.append("\n" + "="*80)
+        debate_log.append("FLEXIBLE DEBATE WITH HALLUCINATION VALIDATION")
+        debate_log.append("="*80 + "\n")
         
-        # ========== PHASE 1: INITIAL ANALYSIS ==========
-        debate_log.append("\n--- PHASE 1: PROBLEM ANALYSIS ---\n")
+        # ========== PHASE 1: ARCHITECTURAL DESIGN ==========
+        debate_log.append("\n--- PHASE 1: ARCHITECTURAL DESIGN ---\n")
         
-        print("  🧠 ADVISOR analyzing problem...")
-        advisor = self._make_api_call(
-            f"{self.advisor_system}\n\nPROBLEM:\n{problem}\n\nAnalyze this problem and recommend approaches.",
-            max_tokens=800, temperature=0.7
+        print("  🏛️  ARCHITECT designing solution architecture...")
+        architect = self._make_api_call(
+            f"{self.architect_system}\n\nPROBLEM:\n{problem}\n\nDesign the architectural blueprint for this problem.",
+            max_tokens=1000, temperature=0.7
         )
-        debate_log.append(f"🧠 ADVISOR:\n{advisor}\n")
+        debate_log.append(f"🏛️  ARCHITECT (ARCHITECTURE):\n{architect}\n")
         time.sleep(2)
         
-        # ========== PHASE 2: BLUEPRINT CREATION ==========
-        debate_log.append("\n--- PHASE 2: BLUEPRINT CREATION ---\n")
+        # ========== PHASE 2: OPTIMIZED IMPLEMENTATION ==========
+        debate_log.append("\n--- PHASE 2: OPTIMIZED IMPLEMENTATION ---\n")
         
-        print("  📐 ENGINEER creating blueprint...")
-        blueprint = self._make_api_call(
-            f"{self.blueprint_system}\n\nADVISOR'S ANALYSIS:\n{advisor}\n\nPROBLEM:\n{problem}\n\nCreate a detailed blueprint for the recommended approach.",
+        print("  ⚙️  OPTIMIZER creating implementation plan...")
+        optimizer = self._make_api_call(
+            f"{self.optimizer_system}\n\nARCHITECT'S DESIGN:\n{architect}\n\nPROBLEM:\n{problem}\n\nCreate an optimized implementation plan based on this architecture.",
+            max_tokens=1500, temperature=0.6
+        )
+        debate_log.append(f"⚙️  OPTIMIZER (IMPLEMENTATION PLAN):\n{optimizer}\n")
+        time.sleep(2)
+        
+        # ========== PHASE 3: REALITY TESTING ==========
+        debate_log.append("\n--- PHASE 3: REALITY TESTING ---\n")
+        
+        print("  🧪 TESTER validating implementation...")
+        tester = self._make_api_call(
+            f"{self.tester_system}\n\nPROBLEM:\n{problem}\n\nARCHITECT'S DESIGN:\n{architect}\n\nOPTIMIZER'S PLAN:\n{optimizer}\n\nValidate this implementation plan and find issues.",
             max_tokens=1200, temperature=0.6
         )
-        debate_log.append(f"📐 ENGINEER (BLUEPRINT):\n{blueprint}\n")
+        debate_log.append(f"🧪 TESTER (VALIDATION):\n{tester}\n")
         time.sleep(2)
         
-        # ========== PHASE 3: BLUEPRINT VALIDATION ==========
-        debate_log.append("\n--- PHASE 3: BLUEPRINT VALIDATION ---\n")
+        # ========== PHASE 4: HALLUCINATION CHECK ==========
+        debate_log.append("\n--- PHASE 4: HALLUCINATION AUDIT ---\n")
         
-        print("  🔍 VALIDATOR checking blueprint...")
-        validator = self._make_api_call(
-            f"{self.validator_system}\n\nPROBLEM:\n{problem}\n\nADVISOR'S ANALYSIS:\n{advisor}\n\nBLUEPRINT:\n{blueprint}\n\nValidate this blueprint and suggest fixes.",
-            max_tokens=1000, temperature=0.6
+        print("  🔍 HALLUCINATION DETECTOR checking for invented requirements...")
+        hallucination_check = self._make_api_call(
+            f"{self.hallucination_checker_system}\n\nORIGINAL PROBLEM:\n{problem}\n\nCURRENT BLUEPRINT:\n{optimizer}\n\nTESTER'S FEEDBACK:\n{tester}\n\nAudit this blueprint for hallucinations.",
+            max_tokens=1000, temperature=0.5
         )
-        debate_log.append(f"🔍 VALIDATOR:\n{validator}\n")
+        debate_log.append(f"🔍 HALLUCINATION DETECTOR:\n{hallucination_check}\n")
         time.sleep(2)
         
-        # ========== PHASE 4: FINAL SYNTHESIS ==========
-        debate_log.append("\n--- PHASE 4: FINAL SYNTHESIS ---\n")
+        # ========== PHASE 5: FINAL SYNTHESIS WITH CORRECTIONS ==========
+        debate_log.append("\n--- PHASE 5: FINAL CORRECTED BLUEPRINT ---\n")
         
-        print("  📐 ENGINEER finalizing blueprint...")
-        final_blueprint = self._make_api_call(
-            f"{self.blueprint_system}\n\nPROBLEM:\n{problem}\n\nORIGINAL BLUEPRINT:\n{blueprint}\n\nVALIDATOR'S FEEDBACK:\n{validator}\n\nCreate a FINAL, CORRECTED blueprint incorporating all fixes.",
-            max_tokens=1200, temperature=0.5
+        print("  ⚙️  OPTIMIZER finalizing with all corrections...")
+        final_optimizer = self._make_api_call(
+            f"{self.optimizer_system}\n\nPROBLEM:\n{problem}\n\nORIGINAL IMPLEMENTATION PLAN:\n{optimizer}\n\nTESTER'S VALIDATION:\n{tester}\n\nHALLUCINATION AUDIT:\n{hallucination_check}\n\nCreate a FINAL, CORRECTED implementation plan that addresses all issues and eliminates hallucinations.",
+            max_tokens=1500, temperature=0.4
         )
-        debate_log.append(f"📐 ENGINEER (FINAL BLUEPRINT):\n{final_blueprint}\n")
+        debate_log.append(f"⚙️  OPTIMIZER (FINAL CORRECTED PLAN):\n{final_optimizer}\n")
         
-        debate_log.append("\n" + "="*70)
-        debate_log.append("DEBATE-BLUEPRINT-DEBATE COMPLETED")
-        debate_log.append("="*70)
+        # ========== PHASE 6: FINAL VALIDATION ==========
+        debate_log.append("\n--- PHASE 6: FINAL VALIDATION ---\n")
         
-        return "\n".join(debate_log), final_blueprint
+        print("  🧪 TESTER performing final validation...")
+        final_tester = self._make_api_call(
+            f"{self.tester_system}\n\nPROBLEM:\n{problem}\n\nFINAL IMPLEMENTATION PLAN:\n{final_optimizer}\n\nPerform a final comprehensive validation of the corrected plan.",
+            max_tokens=800, temperature=0.5
+        )
+        debate_log.append(f"🧪 TESTER (FINAL VALIDATION):\n{final_tester}\n")
+        
+        debate_log.append("\n" + "="*80)
+        debate_log.append("DEBATE-VALIDATION-HALLUCINATION-CHECK COMPLETED")
+        debate_log.append("="*80)
+        
+        return "\n".join(debate_log), final_optimizer
 
 
 class SocraticCodeGenerator:
@@ -164,7 +236,7 @@ class SocraticCodeGenerator:
         # CHANGE 1: Switch to OpenRouter API key
         self.api_key = os.getenv("OPENROUTER_API_KEY")  # Changed from GROQ_API_KEY
         self.api_url = "https://openrouter.ai/api/v1/chat/completions"  # Changed URL
-        print(f"🤖 Socratic Generator initialized (OpenRouter - Flexible Debate)")
+        print(f"🤖 Socratic Generator initialized (OpenRouter - Flexible Debate with Hallucination Check)")
         
         # Test API
         test_response = self._make_api_call("Say 'OpenRouter test successful'", max_tokens=20, temperature=0.1)
@@ -192,7 +264,7 @@ class SocraticCodeGenerator:
         # CHANGE 3: Choose OpenRouter model (Llama 3.3 70B)
         if model is None:
             # Using the free tier model first
-            model = "meta-llama/llama-3.3-70b-instruct:free"
+            model = "meta-llama/llama-3.3-70b-instruct"
         
         data = {
             "model": model,
@@ -291,89 +363,120 @@ class SocraticCodeGenerator:
         
         return "Error: All API providers failed"
     
-    def _generate_code_from_blueprint(self, problem: str, blueprint: str) -> str:
-        """Generate code from validated blueprint"""
-        prompt = f"""Convert this blueprint into complete Python code:
+    def _generate_code_from_optimizer(self, problem: str, optimizer_plan: str) -> str:
+        """Generate code from validated optimizer plan"""
+        prompt = f"""Convert this OPTIMIZED IMPLEMENTATION PLAN into complete, executable Python code:
 
 PROBLEM:
 {problem}
 
-VALIDATED BLUEPRINT:
-{blueprint}
+VALIDATED OPTIMIZER PLAN:
+{optimizer_plan}
 
-Write complete, executable Python code that implements the blueprint exactly.
-Include all necessary imports and handle all edge cases mentioned.
+Write complete, production-ready Python code that implements the optimizer plan exactly.
+Follow these guidelines:
 
-IMPORTANT: 
-1. Follow the blueprint structure exactly
-2. Implement all helper functions mentioned
-3. Add docstrings explaining the algorithm
-4. Ensure time and space complexity match the blueprint
+1. IMPLEMENTATION FIDELITY:
+   - Follow the optimizer plan structure EXACTLY
+   - Implement ALL helper functions mentioned
+   - Use EXACT data structures specified
+   - Maintain EXACT time/space complexity
+
+2. CODE QUALITY:
+   - Add comprehensive docstrings explaining algorithm
+   - Include type hints for all functions
+   - Add comments for complex logic
+   - Handle all edge cases mentioned in plan
+
+3. ERROR HANDLING:
+   - Add input validation
+   - Raise appropriate exceptions for invalid inputs
+   - Include meaningful error messages
+
+4. TEST READINESS:
+   - Make code easy to test
+   - Ensure functions are pure where possible
+   - Avoid global state
 
 Return ONLY the Python code, no explanations.
 
 CODE:"""
         
-        # Use the free model for code generation
-        code = self._make_api_call(prompt, max_tokens=2000, temperature=0.3)
+        # Use a model good at code generation
+        code = self._make_api_call(prompt, max_tokens=2500, temperature=0.3, 
+                                  model="meta-llama/llama-3.3-70b-instruct")
         return self._clean_generated_code(code)
     
     def generate_for_problem(self, problem_data: dict) -> Tuple[dict, float]:
-        """Full Socratic generation with flexible debate"""
+        """Full Socratic generation with flexible debate and hallucination check"""
         problem_id = problem_data.get("id", "Unknown")
         title = problem_data.get("title", "")
         description = problem_data.get("description", "")
         
-        print(f"\n{'='*70}")
-        print(f"SOCRATIC GENERATION - Problem {problem_id}: {title}")
-        print(f"{'='*70}")
+        print(f"\n{'='*80}")
+        print(f"SOCRATIC GENERATION WITH HALLUCINATION CHECK - Problem {problem_id}: {title}")
+        print(f"{'='*80}")
         
         total_start = time.time()
         results = {}
         
         full_problem = f"{title}\n\n{description}"
         
-        # Step 1: Flexible debate with blueprint
-        print("\n💭 Conducting flexible debate with blueprint...")
+        # Step 1: Flexible debate with hallucination check
+        print("\n💭 Conducting flexible debate with hallucination validation...")
         debate_manager = FlexibleDebateValidator(self._make_api_call)
-        debate_log, final_blueprint = debate_manager.conduct_flexible_debate(full_problem)
-        results['debate'] = debate_log
-        results['blueprint'] = final_blueprint
+        debate_log, final_optimizer_plan = debate_manager.conduct_flexible_debate(full_problem)
+        results['debate_log'] = debate_log
+        results['optimizer_plan'] = final_optimizer_plan
         
-        print(f"  ✓ Debate completed, blueprint ready ({len(final_blueprint)} chars)")
+        print(f"  ✓ Debate completed, optimized plan ready ({len(final_optimizer_plan)} chars)")
         time.sleep(2)
         
-        # Step 2: Generate code from validated blueprint
-        print("\n⚙️  Generating code from validated blueprint...")
-        code = self._generate_code_from_blueprint(full_problem, final_blueprint)
+        # Step 2: Generate code from validated optimizer plan
+        print("\n⚙️  Generating code from validated optimizer plan...")
+        code = self._generate_code_from_optimizer(full_problem, final_optimizer_plan)
         
-        # Syntax validation and retry
-        max_retries = 2
+        # Enhanced syntax validation with multiple retries
+        max_retries = 3
         for attempt in range(max_retries):
             try:
                 import ast
                 ast.parse(code)
+                print(f"  ✅ Syntax valid on attempt {attempt + 1}")
                 break  # Syntax is valid
-            except SyntaxError:
+            except SyntaxError as e:
                 print(f"  ⚠️  Syntax error, retry {attempt + 1}/{max_retries}...")
-                # Retry with stricter prompt
-                retry_prompt = f"""Fix syntax errors in this code for problem:
+                print(f"  Error: {str(e)[:100]}")
+                
+                if attempt < max_retries - 1:
+                    # Retry with more specific prompt
+                    retry_prompt = f"""Fix syntax errors in this Python code:
 
+PROBLEM:
 {full_problem}
 
-Code with errors:
+OPTIMIZER PLAN:
+{final_optimizer_plan}
+
+CODE WITH ERRORS:
 {code}
 
-Provide ONLY the corrected Python code, no explanations:"""
-                
-                code = self._make_api_call(retry_prompt, max_tokens=2000, temperature=0.2)
-                code = self._clean_generated_code(code)
+SYNTAX ERROR: {str(e)}
+
+Provide ONLY the corrected Python code with proper syntax, no explanations:"""
+                    
+                    code = self._make_api_call(retry_prompt, max_tokens=2500, temperature=0.2)
+                    code = self._clean_generated_code(code)
+                else:
+                    print("  ❌ Max retries reached for syntax errors")
         
         results['code'] = code
         results['total_time'] = time.time() - total_start
         
         print(f"\n📊 Generation completed in {results['total_time']:.1f}s")
         print(f"  Code length: {len(code)} characters")
+        print(f"  Debate log length: {len(debate_log)} characters")
+        print(f"  Optimizer plan length: {len(final_optimizer_plan)} characters")
         
         return results, results['total_time']
     
@@ -382,21 +485,28 @@ Provide ONLY the corrected Python code, no explanations:"""
         # Save code
         code_file = f"socratic_{problem_id}.py"
         with open(code_file, "w", encoding='utf-8') as f:
-            f.write(f"# SOCRATIC GENERATION - Problem {problem_id}\n")
-            f.write("# Generated from validated blueprint (OpenRouter)\n\n")
+            f.write(f"# SOCRATIC GENERATION WITH HALLUCINATION CHECK - Problem {problem_id}\n")
+            f.write("# Generated from validated optimizer plan (OpenRouter)\n\n")
             f.write(results['code'])
         print(f"  ✓ Saved code to {code_file}")
         
-        # Save blueprint
-        blueprint_file = f"blueprint_{problem_id}.txt"
-        with open(blueprint_file, "w", encoding='utf-8') as f:
-            f.write(f"VALIDATED BLUEPRINT - Problem {problem_id}\n")
-            f.write("="*70 + "\n\n")
-            f.write(results.get('blueprint', 'No blueprint generated'))
-        print(f"  ✓ Saved blueprint to {blueprint_file}")
+        # Save optimizer plan
+        optimizer_file = f"optimizer_plan_{problem_id}.txt"
+        with open(optimizer_file, "w", encoding='utf-8') as f:
+            f.write(f"VALIDATED OPTIMIZER PLAN - Problem {problem_id}\n")
+            f.write("="*80 + "\n\n")
+            f.write(results.get('optimizer_plan', 'No optimizer plan generated'))
+        print(f"  ✓ Saved optimizer plan to {optimizer_file}")
+        
+        # Save debate log
+        debate_file = f"debate_log_{problem_id}.txt"
+        with open(debate_file, "w", encoding='utf-8') as f:
+            f.write(f"DEBATE LOG WITH HALLUCINATION CHECK - Problem {problem_id}\n")
+            f.write("="*80 + "\n\n")
+            f.write(results.get('debate_log', 'No debate log generated'))
+        print(f"  ✓ Saved debate log to {debate_file}")
 
 
-# ADD THIS: Test function for OpenRouter connection
 def test_openrouter_connection():
     """Test OpenRouter connection before running main"""
     from dotenv import load_dotenv
@@ -440,6 +550,11 @@ def test_openrouter_connection():
         print(f"❌ Connection failed: {e}")
         return False
 
+def generate_for_humaneval(problem_prompt: str, problem_id: int) -> str:
+    """Simple wrapper for EvalPlus compatibility"""
+    generator = SocraticCodeGenerator()
+    return generator.generate_for_humaneval(problem_prompt)
+
 
 if __name__ == "__main__":
     # Test connection first
@@ -479,9 +594,9 @@ Requirements:
     
     results, timing = generator.generate_for_problem(test_problem)
     
-    print("\n" + "="*70)
+    print("\n" + "="*80)
     print("CODE PREVIEW (First 500 chars):")
-    print("="*70)
+    print("="*80)
     print(results['code'][:500] + "..." if len(results['code']) > 500 else results['code'])
     
     print(f"\nTotal time: {timing:.2f}s")

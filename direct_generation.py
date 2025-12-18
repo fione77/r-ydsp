@@ -188,7 +188,7 @@ Code:"""
         
         # CHANGE 5: Use Llama 3.3 70B on OpenRouter (free tier)
         data = {
-            "model": "meta-llama/llama-3.3-70b-instruct:free",  # Llama 3.3 70B free tier
+            "model": "meta-llama/llama-3.3-70b-instruct",  # Llama 3.3 70B free tier
             "messages": [{"role": "user", "content": prompt}],
             "max_tokens": max_tokens,
             "temperature": temperature,

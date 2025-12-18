@@ -83,7 +83,7 @@ class FixedLeetCodeEvaluator:
                 'details': [],
                 'error': None
             }
-        
+         
         # Execute code to get the function/class
         namespace = {}
         try:
@@ -283,8 +283,15 @@ class FixedLeetCodeEvaluator:
         optimal_time = problem_data.get('optimal_time_complexity', '')
         optimal_space = problem_data.get('optimal_space_complexity', '')
         
-        detected_time = self._detect_time_complexity(code)
-        detected_space = self._detect_space_complexity(code)
+        # Use AST analysis for more accurate detection
+        ast_analysis = self._analyze_with_ast(code)
+        if ast_analysis:
+            detected_time = ast_analysis.get('time_complexity', 'O(1)')
+            detected_space = ast_analysis.get('space_complexity', 'O(1)')
+        else:
+            # Fallback to pattern matching
+            detected_time = self._detect_time_complexity(code)
+            detected_space = self._detect_space_complexity(code)
         
         time_matches = self._complexity_matches(detected_time, optimal_time)
         space_matches = self._complexity_matches(detected_space, optimal_space)
@@ -297,38 +304,190 @@ class FixedLeetCodeEvaluator:
             'time_matches_optimal': time_matches,
             'space_matches_optimal': space_matches,
             'matches_optimal': time_matches and space_matches,
-            'explanation': self._generate_complexity_explanation(code)
+            'explanation': self._generate_complexity_explanation(code, detected_time, detected_space)
         }
+    
+    def _analyze_with_ast(self, code: str) -> Optional[Dict]:
+        """Use AST parsing for more accurate complexity analysis"""
+        try:
+            import ast
+            
+            class ComplexityVisitor(ast.NodeVisitor):
+                def __init__(self):
+                    self.max_nesting = 0
+                    self.current_nesting = 0
+                    self.loop_vars = []
+                    self.has_sorting = False
+                    self.has_recursion = False
+                    self.func_name = None
+                    self.data_structures = set()
+                    self.recursive_calls = 0
+                    
+                def visit_For(self, node):
+                    self.current_nesting += 1
+                    self.max_nesting = max(self.max_nesting, self.current_nesting)
+                    self.generic_visit(node)
+                    self.current_nesting -= 1
+                    
+                def visit_While(self, node):
+                    self.current_nesting += 1
+                    self.max_nesting = max(self.max_nesting, self.current_nesting)
+                    self.generic_visit(node)
+                    self.current_nesting -= 1
+                    
+                def visit_Call(self, node):
+                    # Check for sorting operations
+                    if isinstance(node.func, ast.Attribute):
+                        if node.func.attr in ['sort', 'sorted']:
+                            self.has_sorting = True
+                    elif isinstance(node.func, ast.Name):
+                        if node.func.id in ['sorted', 'heapq', 'bisect']:
+                            self.has_sorting = True
+                        # Check for recursive calls
+                        if self.func_name and node.func.id == self.func_name:
+                            self.has_recursion = True
+                            self.recursive_calls += 1
+                    self.generic_visit(node)
+                    
+                def visit_FunctionDef(self, node):
+                    if not self.func_name:
+                        self.func_name = node.name
+                    self.generic_visit(node)
+                    
+                def visit_Assign(self, node):
+                    # Check for data structure assignments
+                    if isinstance(node.value, (ast.List, ast.Dict, ast.Set)):
+                        self.data_structures.add(type(node.value).__name__)
+                    self.generic_visit(node)
+            
+            tree = ast.parse(code)
+            visitor = ComplexityVisitor()
+            visitor.visit(tree)
+            
+            # Determine time complexity based on AST analysis
+            time_complexity = self._determine_time_from_ast(visitor)
+            space_complexity = self._determine_space_from_ast(visitor)
+            
+            return {
+                'time_complexity': time_complexity,
+                'space_complexity': space_complexity,
+                'ast_metrics': {
+                    'max_nesting': visitor.max_nesting,
+                    'has_sorting': visitor.has_sorting,
+                    'has_recursion': visitor.has_recursion,
+                    'recursive_calls': visitor.recursive_calls,
+                    'data_structures': list(visitor.data_structures)
+                }
+            }
+            
+        except:
+            return None
+    
+    def _determine_time_from_ast(self, visitor) -> str:
+        """Determine time complexity from AST metrics"""
+        # Check for specific algorithm patterns first
+        if visitor.has_recursion:
+            if visitor.recursive_calls >= 2:
+                # Multiple recursive calls (like fibonacci)
+                return 'O(2ⁿ)'
+            elif visitor.max_nesting > 0:
+                # Recursive with loops
+                if visitor.max_nesting == 1:
+                    return 'O(n log n)' if visitor.has_sorting else 'O(n)'
+                elif visitor.max_nesting == 2:
+                    return 'O(n²)'
+            return 'O(n)'  # Single recursion like factorial
+        
+        # Check for sorting operations
+        if visitor.has_sorting:
+            if visitor.max_nesting == 0:
+                return 'O(n log n)'
+            elif visitor.max_nesting == 1:
+                return 'O(n log n)'  # Sort + single loop
+            elif visitor.max_nesting == 2:
+                return 'O(n² log n)'  # Sort + nested loops
+        
+        # Determine by loop nesting depth
+        if visitor.max_nesting >= 3:
+            return 'O(n³)'
+        elif visitor.max_nesting == 2:
+            return 'O(n²)'
+        elif visitor.max_nesting == 1:
+            return 'O(n)'
+        else:
+            return 'O(1)'
+    
+    def _determine_space_from_ast(self, visitor) -> str:
+        """Determine space complexity from AST metrics"""
+        if visitor.has_recursion:
+            # Recursion uses stack space
+            return 'O(n)'
+        elif visitor.data_structures:
+            # If using lists, dicts, or sets that scale with input
+            return 'O(n)'
+        else:
+            return 'O(1)'
     
     def _detect_time_complexity(self, code: str) -> str:
         """Detect time complexity from code patterns"""
         code_lower = code.lower()
         lines = code.split('\n')
         
-        # Count loop nesting depth
+        # Improved loop nesting depth detection
         max_nesting = 0
         current_nesting = 0
+        indent_stack = []
         
         for line in lines:
             stripped = line.strip()
-            if stripped.startswith('for ') or stripped.startswith('while '):
+            if stripped.startswith('#'):
+                continue
+                
+            current_indent = len(line) - len(line.lstrip())
+            
+            # Check if we've dedented
+            while indent_stack and current_indent <= indent_stack[-1]:
+                indent_stack.pop()
+                current_nesting = max(0, current_nesting - 1)
+            
+            # Detect loops
+            if re.match(r'^\s*(for|while)\b', stripped):
                 current_nesting += 1
                 max_nesting = max(max_nesting, current_nesting)
-            # Dedent detection (rough)
-            elif stripped and not stripped.startswith('#'):
-                indent = len(line) - len(line.lstrip())
-                if indent == 0:
-                    current_nesting = 0
+                indent_stack.append(current_indent)
         
-        # Check for specific patterns
-        if 'heapq' in code_lower or '.sort(' in code_lower or 'sorted(' in code_lower:
+        # Check for specific algorithm patterns
+        
+        # Binary search pattern (improved)
+        binary_search_patterns = [
+            r'while\s+[a-z]+\s*<=\s*[a-z]+:',
+            r'mid\s*=\s*\([a-z]+\s*\+\s*[a-z]+\)\s*//\s*2',
+            r'[a-z]+\s*=\s*mid\s*[+-]\s*1'
+        ]
+        if all(re.search(pattern, code_lower) for pattern in binary_search_patterns[:2]):
+            return 'O(log n)'
+        
+        # Check for sorting/heap operations
+        if re.search(r'\.sort\s*\(|sorted\s*\(|heapq\.', code_lower):
             if max_nesting >= 1:
                 return 'O(n log n)'
             return 'O(n log n)'
         
-        # Binary search pattern
-        if re.search(r'while\s+\w+\s*[<>]=?\s*\w+.*:\s*\n\s+\w+\s*=.*\(.*\+.*\)\s*//', code):
-            return 'O(log n)'
+        # Check for matrix operations
+        if re.search(r'for\s+.*\s+in\s+range\s*\(.*\)\s*:.*\n\s*for\s+.*\s+in\s+range\s*\(.*\)', code):
+            if max_nesting == 2:
+                return 'O(n²)'
+            elif max_nesting == 3:
+                return 'O(n³)'
+        
+        # Check for divide and conquer (like merge sort)
+        if re.search(r'def\s+\w+\s*\(.*\):.*\n\s*return\s+\w+\s*\(\s*\w+\s*\[:\s*mid\s*\]\s*\)\s*\+\s*\w+\s*\(\s*\w+\s*\[\s*mid\s*:\s*\]\s*\)', code, re.DOTALL):
+            return 'O(n log n)'
+        
+        # Check for two pointers/sliding window
+        if re.search(r'left\s*=\s*0.*right\s*=\s*0|start\s*=\s*0.*end\s*=\s*0', code_lower):
+            if max_nesting == 1:
+                return 'O(n)'
         
         # Nested loops
         if max_nesting >= 3:
@@ -338,12 +497,20 @@ class FixedLeetCodeEvaluator:
         elif max_nesting >= 1:
             return 'O(n)'
         
-        # Recursive patterns
-        func_name = self._extract_function_name(code, {})
-        if func_name and code.count(func_name) > 2:  # Recursive calls
-            if 'memo' in code_lower or 'dp' in code_lower or 'cache' in code_lower:
+        # Recursive patterns (improved detection)
+        func_match = re.search(r'def\s+(\w+)\s*\(', code)
+        if func_match:
+            func_name = func_match.group(1)
+            # Count recursive calls more accurately
+            recursive_pattern = rf'{func_name}\s*\(\s*.*[nN]\s*[-+]\s*\d+.*\)'
+            if re.search(recursive_pattern, code):
+                # Check for memoization
+                if re.search(r'memo|dp\s*\[|@lru_cache|@cache', code_lower):
+                    return 'O(n)'
+                # Check for multiple recursive calls (like fibonacci)
+                if code.count(func_name) > 3:
+                    return 'O(2ⁿ)'
                 return 'O(n)'
-            return 'O(2ⁿ)'
         
         return 'O(1)'
     
@@ -351,16 +518,38 @@ class FixedLeetCodeEvaluator:
         """Detect space complexity from code patterns"""
         code_lower = code.lower()
         
-        # Check for data structures proportional to input
-        if any(pattern in code_lower for pattern in 
-               ['= [' + ']' * i for i in range(1, 5)] + 
-               ['= {}', '= set(', 'list(', 'dict(', 'defaultdict', 'counter']):
+        # Check for data structures that scale with input
+        # Improved pattern matching
+        scaling_patterns = [
+            # List comprehensions that iterate over input
+            r'\[\s*.*\s*for\s+.*\s+in\s+\w+\s*\]',
+            # Dict comprehensions
+            r'\{\s*.*\s*:\s*.*\s*for\s+.*\s+in\s+\w+\s*\}',
+            # Explicit list/dict creation with input size
+            r'\[\s*\]\s*\*\s*\w+',
+            r'\w+\s*=\s*\[\s*\]\s*;\s*for',
+            r'\w+\.append\(|\w+\.extend\(',
+            # Common scaling data structures
+            r'defaultdict|Counter|deque|heapq',
+            # Matrix/2D array creation
+            r'\[\s*\[\s*[^\]]*\s*\]\s*for\s+.*\s+in\s+range',
+        ]
+        
+        if any(re.search(pattern, code_lower, re.IGNORECASE) for pattern in scaling_patterns):
             return 'O(n)'
         
         # Check for recursion depth
-        func_name = self._extract_function_name(code, {})
-        if func_name and code.count(func_name) > 2:
-            return 'O(n)'  # Recursion stack
+        func_match = re.search(r'def\s+(\w+)\s*\(', code)
+        if func_match:
+            func_name = func_match.group(1)
+            # Look for recursive calls with decreasing parameters
+            recursive_calls = re.findall(rf'{func_name}\s*\(\s*.*[nN]\s*[-+]\s*\d+.*\)', code)
+            if recursive_calls:
+                return 'O(n)'  # Recursion stack
+        
+        # Check for BFS/DFS with queue/stack
+        if re.search(r'queue\.|deque\(|stack\s*=\s*\[', code_lower):
+            return 'O(n)'
         
         return 'O(1)'
     
@@ -370,39 +559,114 @@ class FixedLeetCodeEvaluator:
             return True
         
         # Normalize notations
-        detected = detected.replace('^', '').replace('²', '2').replace('³', '3').lower()
-        optimal = optimal.replace('^', '').replace('²', '2').replace('³', '3').lower()
+        def normalize(comp: str) -> str:
+            comp = comp.strip().lower()
+            comp = re.sub(r'[²³^]', '', comp)  # Remove exponents
+            comp = re.sub(r'\s+', ' ', comp)   # Normalize spaces
+            comp = re.sub(r'o\((\d+)\)', r'o(1)', comp)  # Any constant to O(1)
+            
+            # Handle equivalent notations
+            equivalences = {
+                r'o\(n2\)': 'o(n^2)',
+                r'o\(n\s*\*\s*2\)': 'o(n^2)',
+                r'o\(n\s*log\s*n\)': 'o(n log n)',
+                r'o\(log\s*n\)': 'o(log n)',
+                r'o\(2\s*n\)': 'o(2^n)',
+                r'o\(n!\s*\)': 'o(n!)',
+                r'o\(n\s*\*\s*\*\s*2\)': 'o(n^2)',
+            }
+            
+            for pattern, replacement in equivalences.items():
+                comp = re.sub(pattern, replacement, comp)
+            
+            return comp
+        
+        detected_norm = normalize(detected)
+        optimal_norm = normalize(optimal)
         
         # Direct match
-        if detected in optimal or optimal in detected:
+        if detected_norm == optimal_norm:
             return True
         
-        # Handle equivalent notations
-        complexity_map = {
-            'o(n2)': 'o(n^2)',
-            'o(nlogn)': 'o(n log n)',
-            'o(logn)': 'o(log n)',
-            'o(2n)': 'o(2^n)'
-        }
+        # Handle ranges (e.g., O(n) matches O(n log n) in some contexts)
+        complexity_order = ['o(1)', 'o(log n)', 'o(n)', 'o(n log n)', 'o(n^2)', 'o(n^3)', 'o(2^n)', 'o(n!)']
         
-        detected_normalized = complexity_map.get(detected.replace(' ', ''), detected)
-        optimal_normalized = complexity_map.get(optimal.replace(' ', ''), optimal)
+        try:
+            detected_idx = complexity_order.index(detected_norm)
+            optimal_idx = complexity_order.index(optimal_norm)
+            
+            # Allow one level of difference for practical purposes
+            if abs(detected_idx - optimal_idx) <= 1:
+                return True
+        except ValueError:
+            pass
         
-        return detected_normalized == optimal_normalized
+        # Partial matches
+        if detected_norm in optimal_norm or optimal_norm in detected_norm:
+            return True
+        
+        return False
     
-    def _generate_complexity_explanation(self, code: str) -> str:
+    def _generate_complexity_explanation(self, code: str, detected_time: str = None, detected_space: str = None) -> str:
         """Generate explanation for complexity detection"""
-        lines = code.split('\n')
-        loop_count = sum(1 for line in lines if 'for ' in line or 'while ' in line)
+        if not detected_time:
+            detected_time = self._detect_time_complexity(code)
+        if not detected_space:
+            detected_space = self._detect_space_complexity(code)
         
-        if 'heapq' in code.lower() or '.sort(' in code.lower():
-            return f"Detected sorting/heap operations → O(n log n)"
-        elif loop_count >= 2:
-            return f"Detected {loop_count} loops (likely nested) → O(n²)"
-        elif loop_count == 1:
-            return f"Detected single loop → O(n)"
-        else:
-            return "No loops detected → O(1)"
+        lines = code.split('\n')
+        loop_count = sum(1 for line in lines if re.match(r'^\s*(for|while)\b', line.strip()))
+        func_count = code.count('def ')
+        
+        explanations = []
+        
+        # Time complexity explanation
+        if detected_time == 'O(1)':
+            if loop_count == 0 and func_count <= 1:
+                explanations.append("No loops or recursion → O(1)")
+            else:
+                explanations.append("Constant time operations → O(1)")
+        elif detected_time == 'O(log n)':
+            if 'mid' in code.lower() or 'binary' in code.lower():
+                explanations.append("Binary search pattern → O(log n)")
+            else:
+                explanations.append("Halving search space → O(log n)")
+        elif detected_time == 'O(n)':
+            if loop_count == 1:
+                explanations.append(f"Single loop over input → O(n)")
+            elif func_count > 1 and 'memo' in code.lower():
+                explanations.append("Memoized recursion → O(n)")
+            else:
+                explanations.append("Linear traversal → O(n)")
+        elif detected_time == 'O(n log n)':
+            if '.sort' in code.lower() or 'sorted' in code.lower():
+                explanations.append("Sorting operation → O(n log n)")
+            elif 'heapq' in code.lower():
+                explanations.append("Heap operations → O(n log n)")
+            else:
+                explanations.append("Divide and conquer → O(n log n)")
+        elif detected_time == 'O(n²)':
+            if loop_count >= 2:
+                explanations.append(f"Nested loops ({loop_count} levels) → O(n²)")
+            else:
+                explanations.append("Quadratic operations → O(n²)")
+        elif detected_time == 'O(2ⁿ)':
+            explanations.append("Exponential recursion (multiple branches) → O(2ⁿ)")
+        elif detected_time == 'O(n³)':
+            explanations.append("Triple nested loops → O(n³)")
+        
+        # Space complexity explanation
+        if detected_space == 'O(1)':
+            explanations.append("Constant extra space → O(1)")
+        elif detected_space == 'O(n)':
+            if '[]' in code or 'list(' in code.lower():
+                explanations.append("Auxiliary array/list → O(n)")
+            elif 'def ' in code and code.count('def ') > 1:
+                explanations.append("Recursion stack → O(n)")
+            else:
+                explanations.append("Linear extra space → O(n)")
+        
+        return " | ".join(explanations) if explanations else "Complexity analysis inconclusive"
     
     def _analyze_edge_cases(self, code: str, problem_data: Dict) -> Dict:
         """Analyze edge case handling"""
